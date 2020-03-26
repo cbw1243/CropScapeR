@@ -1,8 +1,8 @@
 ## CropScapeR: Access Cropland Data Layer data via the CropScape web service
 
-The [Cropland Data Layer (CDL)](https://www.nass.usda.gov/Research_and_Science/Cropland/sarsfaqs2.php) is a data product produced by the National Agricultural Statistics Service of U.S. Department of Agriculture. It provides geo-referenced, high accuracy, 30 or 56 m resolution, crop-specific cropland land cover information for up to 48 contiguous states in the U.S. from 1997 to the present. This product has been extensively used in the agriculture research. 
+The [Cropland Data Layer (CDL)](https://www.nass.usda.gov/Research_and_Science/Cropland/sarsfaqs2.php) is a data product produced by the National Agricultural Statistics Service of U.S. Department of Agriculture. It provides geo-referenced, high accuracy, 30 or 56 m resolution, crop-specific cropland land cover information for up to 48 contiguous states in the U.S. from 1997 to the present. This data product has been extensively used in the agriculture research [1]. 
 
-[CropScape](https://nassgeodata.gmu.edu/CropScape/) is an interactive Web CDL exploring system, which was developed to query, visualize, disseminate, and analyze CDL data geospatially through standard geospatial Web services in a publicly accessible online environment. The development of this package is to provide R functions that allow R users to easily utilize the geospatial processing services provided by CropScape. These services allow users to effectively and efficiently access and analyze the CDL data. 
+[CropScape](https://nassgeodata.gmu.edu/CropScape/) is an interactive Web CDL exploring system, and it was developed to query, visualize, disseminate, and analyze CDL data geospatially through standard geospatial Web services in a publicly accessible online environment.[2] The development of this package is to provide R functions that allow R users to easily utilize the geospatial processing services provided by CropScape. These services allow users to effectively and efficiently access and analyze the CDL data. 
 
 ## Key functions     
 We implement four geospatial processing services provided by [CropScape](https://nassgeodata.gmu.edu/CropScape/) in R: 
@@ -42,4 +42,7 @@ The development of this package was supported by USDA-NRCS Agreement No. NR193A7
 ## Reference   
 
 [1] Boryan, Claire, Zhengwei Yang, Rick Mueller, and Mike Craig. 2011. Monitoring US Agriculture: The US Department of Agriculture, National Agricultural Statistics Service, Cropland Data Layer Program. *Geocarto International* 26 (5): 341–58. https://doi.org/10.1080/10106049.2011.562309.
+
+[2] Han, Weiguo, Zhengwei Yang, Liping Di, and Richard Mueller. 2012. CropScape: A Web Service Based Application for Exploring and Disseminating US Conterminous Geospatial Cropland Data Products for Decision Support. *Computers and Electronics in Agriculture* 84 (June): 111–23. https://doi.org/10.1016/j.compag.2012.03.005.
+
 
