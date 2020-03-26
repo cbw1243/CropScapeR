@@ -1,0 +1,686 @@
+rm(list = ls())
+library(dplyr)
+library(tidyr)
+library(data.table)
+library(countrycode)
+library(lfe)
+library(mgcv)
+library(ggplot2)
+library(gridExtra)
+library(texreg)
+library(grid)
+#library(stargazer)
+setwd('~')
+
+# Intra-annual food price variability with and without food price seasonality.
+deSeasonPriceDat <- fread('../Dropbox (Personal)/ExtShock/5_Data/FAOMaizeMonthPriceDeTrendDeSeasonAllTypes_May2019.csv')
+
+PriceVarRatio <- deSeasonPriceDat %>%
+  select(1:6, contains('Spline')) %>%
+  group_by(Country, Group) %>%
+  summarise(deTrendSpline.VAR = var(deTrendSpline),
+            Spline.resid.VAR = var(Spline.resid)) %>%
+  mutate(Ratio = 100*Spline.resid.VAR/deTrendSpline.VAR) %>%
+  group_by(Country) %>%
+  summarise(Ratio = mean(Ratio)) %>%
+  ggplot(data = .) +
+  geom_bar(aes(Country, Ratio), stat = 'identity')
+
+PriceVarRatio # Unexpected prices account for majority share of the price variations.
+
+#-------------------------------------------------------------------------------------------------------------------#
+# AIC for analyzing the best trend specification for maize yields.
+#>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>#
+PriceVolDat <- fread('./ExtShock/5_Data/FAOMaizePriceMktYearVAR_May2019.csv') %>%
+  mutate(Country = ifelse(Country == 'Swaziland', 'Eswatini', Country),
+         ISO = ifelse(Country == 'Swaziland', 'SWZ', ISO))
+
+DomYieldShock <- fread(input = './ExtShock/5_Data/FAOSTAT_MaizeYield_May2019.csv') %>%
+  dplyr::filter(!Area %in% c('China', 'Ethiopia PDR', 'Southern Africa'),
+                Element %in% c('Yield'),
+                Item == 'Maize') %>%
+  mutate(ISO = countrycode(Area, 'country.name', 'iso3c'),
+         ISO = ifelse(Area == 'Eswatini', 'SWZ', ISO)) %>%
+  filter(ISO %in% unique(PriceVolDat$ISO)) %>%
+  mutate(Year = as.numeric(Year), Value = as.numeric(Value))
+
+AICFunc <- function(selCty){
+subData <- DomYieldShock %>% filter(ISO == selCty)
+
+linearTD <- lm(Value ~ poly(Year, 1), data = subData)
+quadraticTD <- lm(Value ~ poly(Year, 2), data = subData)
+cubicTD <- lm(Value ~ poly(Year, 3), data = subData)
+
+AICout <- data.frame(selCty,
+                     Linear = round(AIC(linearTD), 1),
+                     Quadratic = round(AIC(quadraticTD), 1),
+                     Cubic = round(AIC(cubicTD), 1))
+AICout
+}
+
+tableOut <- lapply(unique(PriceVolDat$ISO), AICFunc) %>%
+  bind_rows() %>%
+  mutate(Country = countrycode(selCty, 'iso3c', 'country.name')) %>%
+  arrange(Country) %>%
+  select(Country, 2:4)
+
+stargazer(tableOut, summary = F, rownames = F, digits = 1)
+
+#-------------------------------------------------------------------------------------------------------------------#
+# Merge with other data at annual basis.
+#>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>#
+rm(list = ls())
+
+PriceVolDat <- fread('../5_Data/FAOMaizePriceMktYearVAR_May2019.csv') %>%
+  mutate(Country = ifelse(Country == 'Swaziland', 'Eswatini', Country),
+         ISO = ifelse(Country == 'Swaziland', 'SWZ', ISO))
+ForeignYieldShock <- fread('../5_Data/ForeignYieldShock_May2019.csv')
+ControlData <- fread('../5_Data/RegressionAnnualData_May2019.csv')
+
+
+# Construct domestic yield shocks.
+quadraticTrendFunc <- function(x, y) {
+  reg <- lm(x ~ poly(y, 2))
+  reg$residual/reg$fitted
+}
+
+cubicTrendFunc <- function(x, y) {
+  reg <- lm(x ~ poly(y, 2))
+  reg$residual/reg$fitted
+}
+
+DomYieldShock <- fread(input = '../5_Data/FAOSTAT_MaizeYield_May2019.csv') %>%
+  dplyr::filter(!Area %in% c('China', 'Ethiopia PDR', 'Southern Africa'),
+                Element %in% c('Yield'),
+                Item == 'Maize') %>%
+  mutate(ISO = countrycode(Area, 'country.name', 'iso3c'),
+         ISO = ifelse(Area == 'Eswatini', 'SWZ', ISO)) %>%
+  filter(ISO %in% c(unique(PriceVolDat$ISO), 'USA')) %>%
+  #filter(ISO %in% c(unique(PriceVolDat$ISO)) %>%
+  mutate(Year = as.numeric(Year), Value = as.numeric(Value)) %>%
+  group_by(Area, Element) %>%
+  mutate(Value = cubicTrendFunc(Value, Year)) %>%
+  dplyr::select(ISO, Year, Area, Element, Value) %>%
+  spread(Element, Value) %>%
+  dplyr::rename(DomYieldShock = Yield)
+
+# # Visualize the yield shocks in focus countries.
+# ggplot(data = DomYieldShock) +
+#   geom_line(aes(Year, DomYieldShock)) +
+#   facet_wrap(~ ISO, ncol = 4, scales = 'free')
+#
+# selPriceData <- fread('../5_Data/FAOMaizeMonthPriceDeTrendDeSeasonAllTypes_May2019.csv') %>%
+#   mutate(ISO = countrycode(Country, 'country.name', 'iso3c')) %>%
+#   mutate(TimeFM = as.Date(TimeFM, format = '%Y-%m-%d')) %>%
+#   mutate(Year = year(TimeFM), Month = month(TimeFM))
+#
+# selPriceData %>%
+#   filter(ISO %in% c('SLV', 'GTM', 'HND', 'MEX', 'NIC', 'PAN'), Year >= 2011) %>%
+#   group_by(ISO, TimeFM, Year) %>%
+#   summarise(Spline.resid = mean(Spline.resid)) %>%
+#   ungroup() %>%
+#   ggplot(data = .) +
+#   geom_line(aes(TimeFM, Spline.resid)) +
+#   geom_point(aes(TimeFM, Spline.resid)) +
+#   facet_wrap(~ ISO)
+#
+# DomYieldShock %>%
+#   filter(DomYieldShock, ISO == 'MOZ') %>%
+#   ggplot(data = .) +
+#   geom_point(aes(Year, DomYieldShock))
+
+# Get the world bank data
+library(wbstats)
+
+WorldBankDat <- wb(indicator = c('NY.GDP.PCAP.KD', 'FR.INR.RINR'), #"NY.GDP.PCAP.KD",
+                   startdate = 1980, enddate = 2017, country = unique(PriceVolDat$ISO))
+
+WorldBankDatClean <- WorldBankDat %>%
+  dplyr::select(iso3c, date, value, indicatorID) %>%
+  mutate(date = as.numeric(date)) %>%
+  spread(indicatorID, value) %>%
+  dplyr::rename(perCapitaGDP = NY.GDP.PCAP.KD,
+                IntRate = FR.INR.RINR) %>%
+  group_by(iso3c) %>%
+  mutate(perCapitaGDPShock = quadraticTrendFunc(perCapitaGDP, date))
+
+# test <- wbindicators(lang = c("en"))
+# test1 <- test %>%
+#   filter(grepl('interest', indicator))
+
+RegressionDat <- PriceVolDat %>%
+  filter(mktYear < 2018, mktYear >= 2000) %>%
+  left_join(., DomYieldShock, by = c('mktYear' = 'Year', 'ISO')) %>%
+  left_join(., ForeignYieldShock, by = c('mktYear' = 'Year', 'ISO' = 'PartnerISO')) %>%
+  left_join(., WorldBankDatClean, by = c('mktYear' = 'date', 'ISO' = 'iso3c')) %>%
+  mutate(DomYieldDev.Dir = ifelse(DomYieldShock > 0, 'Pos', 'Neg'),
+         ExtYieldDev.2YearAveDir = ifelse(ExtYieldDev.2YearAve > 0, 'Pos', 'Neg'),
+         ExtYieldDev.3YearAveDir = ifelse(ExtYieldDev.3YearAve > 0, 'Pos', 'Neg'),
+         ExtYieldDev.4YearAveDir = ifelse(ExtYieldDev.4YearAve > 0, 'Pos', 'Neg'),
+         ExtYieldDev.5YearAveDir = ifelse(ExtYieldDev.5YearAve > 0, 'Pos', 'Neg'),
+         ExtYieldDev.topDir = ifelse(ExtYieldDev.top > 0, 'Pos', 'Neg'),
+         ExtYieldDev.StaticDir = ifelse(ExtYieldDev.Static > 0, 'Pos', 'Neg'),
+         ExtYieldDev.DomForDir = ifelse(ExtYieldDev.5YearAve*DomYieldShock > 0, 'Pos', 'Neg')) %>%
+  left_join(., ControlData, by = c('mktYear', 'ISO')) %>%
+  #drop_na() %>%
+  mutate(tmpGroup = ifelse(Country %in% c('Burundi', 'Chad', 'Rwanda'), 'landloacked', 'coastal'))
+
+write.csv(RegressionDat, file = '../5_Data/RegressionDataV2_May2019.csv', row.names = F)
+
+#-------------------------------------------------------------------------------------------------------------------#
+# Regression
+#>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>#
+rm(list=ls())
+RegressionDat <- fread('../Dropbox (Personal)/ExtShock/5_Data/RegressionDataV2_May2019.csv')
+
+RegDat <- RegressionDat %>%
+  mutate(Imports = NetImportRatio*DomConsump,
+         Stocks = BeginStockRatio*DomConsump,
+         DeltaStock = StockChange*DomConsump) %>%
+  select(Imports, Stocks, DeltaStock, ExtYieldDev.4YearAve, DomYieldShock, perCapitaGDP, ISO, mktYear) %>%
+  distinct() %>%
+  mutate(ForeignYieldDummy = ifelse(ExtYieldDev.4YearAve <= -0.2, 'High', 'Normal')) %>%
+  left_join(., ExtYieldDev.Static, by = c('ISO'='PartnerISO','mktYear' = 'Year')) %>%
+  mutate(ForeignYieldDummy = ifelse(ExtYieldDev.Static <= 48000, 'High', 'Normal')) %>%
+  left_join(., FAOSTATProd, by = c('ISO','mktYear' = 'Year')) %>%
+  mutate(Yield = Yield/10000, ExtYieldDev.Static = ExtYieldDev.Static/10000)
+
+summary(RegDat)
+auxReg1 <- felm(Imports ~ ExtYieldDev.4YearAve + DomYieldShock + DeltaStock + ISO:mktYear|ISO, data = RegDat)
+auxReg2 <- felm(Imports ~ ForeignYieldDummy:ExtYieldDev.4YearAve + DomYieldShock + DeltaStock + ISO:mktYear|ISO,
+                data = filter(RegDat, ExtYieldDev.4YearAve < 0))
+summary(auxReg1)
+summary(auxReg2)
+
+summary(RegDat)
+auxReg1 <- felm(Imports ~ ExtYieldDev.Static + Yield + DeltaStock + ISO:mktYear|ISO|0|ISO, data = RegDat)
+auxReg2 <- felm(Imports ~ ForeignYieldDummy:ExtYieldDev.Static + Yield + DeltaStock + ISO:mktYear|ISO,
+                data = RegDat)
+summary(auxReg1)
+summary(auxReg2)
+8.413e-03*(mean(RegDat$ExtYieldDev.Static, na.rm = T)/mean(RegDat$Imports))
+
+
+auxReg3 <- gam(Imports ~ s(ExtYieldDev.Static, bs = 'cr', k = 10) + Yield + DeltaStock + ISO:mktYear + ISO, data = RegDat)
+plot(auxReg3)
+
+k <- 1
+dat <- invisible(plot(auxReg3, residuals = T, select = k))
+datOut1 <- data.frame(x = dat[[k]]$x, y = dat[[k]]$fit, ysd = dat[[k]]$se) %>%
+  mutate(y2 = x*8.413e-03)
+datOut1
+
+g <-
+ggplot(data = datOut1) +
+  geom_line(aes(x, y)) +
+  geom_line(aes(x, y + ysd), lty = 2) +
+  geom_line(aes(x, y - ysd), lty = 2) +
+  scale_x_continuous(breaks = seq(0, 12, by = 2)) +
+  scale_y_continuous(breaks = seq(-1000, 1500, by = 250)) +
+  labs(x = 'Foreign maize yields (Kg per hectare)', y = 'Fitted value of the smooth function \n of foreign yields') +
+  theme_classic() +
+  theme(axis.text = element_text(color = 'black'),
+        title = element_text(size = 10))
+
+g
+ggsave(filename = '../Dropbox (Personal)/ExtShock/4_TablesFigures/Fig_AugRegNonlinear.png', plot = g, width = 200, height = 160, units = 'mm')
+
+
+
+
+
+
+
+# Summary statistics.
+sumData <- RegressionDat %>%
+  select(deTrendCubic.SD, SDlogChange, logValue.Gap, logValue.IQR,
+         ExtYieldDev.4YearAve,
+         DomYieldShock,
+         BeginStockRatio, REER_SD, perCapitaGDPShock) %>%
+  drop_na()
+
+stargazer::stargazer(sumData, summary = T, digits = 2, omit.summary.stat = c("p25", "p75"))
+
+# selCty <- RegressionDat %>%
+#   filter(Country == 'Mozambique') %>%
+#   dplyr::select(Country, DomYieldShock, mktYear)
+#
+# DomYieldShockData <- RegressionDat %>%
+#   group_by(Country, mktYear) %>%
+#   summarise(DomYieldShock = mean(DomYieldShock))
+
+reg1 <- felm(deTrendCubic.SD ~ DomYieldShock + ExtYieldDev.4YearAve + BeginStockRatio+ REER_SD + perCapitaGDPShock|
+             factor(Country) + factor(City) + factor(MarketChain) + factor(mktYear)| 0 | Country,
+             exactDOF = 'rM',
+             data = RegressionDat)
+summary(reg1)
+
+reg2 <- felm(SDlogChange ~ DomYieldShock + ExtYieldDev.4YearAve + BeginStockRatio+ REER_SD + perCapitaGDPShock|
+               factor(Country) + factor(City) + factor(MarketChain) + factor(mktYear)| 0 | Country,
+             exactDOF = 'rM',
+             data = RegressionDat)
+summary(reg2)
+
+reg3 <- felm(deTrendCubic.Gap ~ DomYieldShock + ExtYieldDev.4YearAve + BeginStockRatio+ REER_SD + perCapitaGDPShock|
+               factor(Country) + factor(City) + factor(MarketChain) + factor(mktYear)| 0 | Country,
+             exactDOF = 'rM',
+             data = RegressionDat)
+summary(reg3)
+
+reg4 <- felm(deTrendCubic.IQR ~ DomYieldShock + ExtYieldDev.4YearAve + BeginStockRatio+ REER_SD + perCapitaGDPShock|
+               factor(Country) + factor(City) + factor(MarketChain) + factor(mktYear)| 0 | Country,
+             exactDOF = 'rM',
+             data = RegressionDat)
+summary(reg4)
+
+# Report the results
+texreg(l = list(reg1, reg2, reg3, reg4), stars = c(0.01, 0.05, 0.1),
+       custom.coef.names = c('Domestic yield shock', 'Foreign yield shock',
+                             'Beging stock-to-use ratio', 'Exchange rate variability', 'Per capita GDP shock'),
+       custom.model.names = c('M1', 'M2', 'M3', 'M4'),
+       caption = "Regressing intra-annual maize price variability on domestic and foreign maize yield shocks",
+       caption.above = TRUE,
+       inline.css = FALSE, doctype = TRUE, html.tag = TRUE,
+       head.tag = TRUE, body.tag = TRUE)
+
+
+# Linear regression with kinks
+regX <- felm(deTrendCubic.SD ~ DomYieldShock + DomDummy:DomYieldShock + ExtYieldDev.4YearAve + BeginStockRatio+ REER_SD + perCapitaGDPShock|
+               factor(Country) + factor(City) + factor(MarketChain) + factor(mktYear)| 0 | Country,
+             exactDOF = 'rM',
+             data = mutate(RegressionDat, DomDummy = ifelse(DomYieldShock >= 0.2, 1, 0)))
+
+summary(regX)
+
+library(plm)
+
+dataX <- RegressionDat %>%
+  mutate(id = paste0(Country, Group),
+         DomDummy = ifelse(DomYieldShock >= 0.15, 1, 0),
+         ForDummy = as.factor(ifelse(DomYieldShock <= -0.1, 1, 0)))
+  # group_by(Country, mktYear) %>%
+  # summarise_at(vars(deTrendCubic.SD,DomYieldShock,ExtYieldDev.4YearAve,BeginStockRatio,REER_SD,perCapitaGDPShock), mean)
+
+dataX <- pdata.frame(dataX, index = c('id', 'mktYear'))
+
+gmmreg1 <- pgmm(deTrendCubic.SD ~ lag(deTrendCubic.SD, 1) + DomYieldShock + DomDummy:DomYieldShock +
+                 ExtYieldDev.4YearAve +
+                 BeginStockRatio+ REER_SD + perCapitaGDPShock| lag(deTrendCubic.SD, 2:99),
+               data = dataX, effect = 'twoways', model = 'twosteps', robust = F)
+
+
+gmmreg2 <- pgmm(SDlogChange ~ lag(SDlogChange, 1) + DomYieldShock + DomDummy:DomYieldShock +
+                  ExtYieldDev.4YearAve +
+                  BeginStockRatio+ REER_SD + perCapitaGDPShock| lag(deTrendCubic.SD, 2:99),
+                data = dataX, effect = 'twoways', model = 'twosteps', robust = F)
+
+
+gmmreg3 <- pgmm(logValue.Gap ~ lag(logValue.Gap, 1) + DomYieldShock + DomDummy:DomYieldShock +
+                  ExtYieldDev.4YearAve +
+                  BeginStockRatio+ REER_SD + perCapitaGDPShock| lag(deTrendCubic.SD, 2:99),
+                data = dataX, effect = 'twoways', model = 'twosteps', robust = F)
+
+
+gmmreg4 <- pgmm(logValue.IQR ~ lag(logValue.IQR, 1) + DomYieldShock + DomDummy:DomYieldShock +
+                  ExtYieldDev.4YearAve +
+                  BeginStockRatio+ REER_SD + perCapitaGDPShock| lag(deTrendCubic.SD, 2:99),
+                data = dataX, effect = 'twoways', model = 'twosteps', robust = F)
+
+
+summary(gmmreg1)
+
+summary(gmmreg2)
+
+summary(gmmreg3)
+
+summary(gmmreg4)
+
+
+
+
+
+
+# Semi-parametric regression.
+ksel <- 10
+#summary(RegressionDat)
+gamReg1 <- mgcv::gam(deTrendCubic.SD ~ s(DomYieldShock, bs = 'tp', k = ksel) +
+             s(ExtYieldDev.4YearAve, bs = 'cr', k = ksel) +
+             REER_SD + BeginStockRatio + perCapitaGDPShock +
+             factor(Country) + factor(City) + factor(MarketChain) + factor(mktYear),
+             data = filter(RegressionDat, DomYieldShock >= -0.6))
+
+gamReg2 <- mgcv::gam(SDlogChange ~ s(DomYieldShock, bs = 'cr', k = ksel) +
+                 s(ExtYieldDev.4YearAve, bs = 'cr', k = ksel) +
+                 REER_SD + BeginStockRatio + perCapitaGDPShock +
+                 factor(Country) + factor(City) + factor(MarketChain) + factor(mktYear),
+               data = filter(RegressionDat, DomYieldShock >= -0.6))
+
+gamReg3 <- mgcv::gam(logValue.Gap ~ s(DomYieldShock, bs = 'cr', k = ksel) +
+                 s(ExtYieldDev.4YearAve, bs = 'cr', k = ksel) +
+                 REER_SD + BeginStockRatio + perCapitaGDPShock +
+                 factor(Country) + factor(City) + factor(MarketChain) + factor(mktYear),
+               data = filter(RegressionDat, DomYieldShock >= -0.6))
+
+gamReg4 <- mgcv::gam(logValue.IQR ~ s(DomYieldShock, bs = 'cr', k = ksel) +
+                 s(ExtYieldDev.4YearAve, bs = 'cr', k = ksel) +
+                 REER_SD + BeginStockRatio + perCapitaGDPShock +
+                 factor(Country) + factor(City) + factor(MarketChain) + factor(mktYear),
+               data = filter(RegressionDat, DomYieldShock >= -0.6))
+
+summary(gamReg1)
+dev.off()
+plot(gamReg1, residuals = T, pages = 1)
+anova(gamReg1, mgcv::gam(deTrendCubic.SD ~ DomYieldShock +
+                                      ExtYieldDev.4YearAve +
+                                      REER_SD + BeginStockRatio + perCapitaGDPShock +
+                                      factor(Country) + factor(City) + factor(MarketChain) + factor(mktYear),
+                                    data = filter(RegressionDat, DomYieldShock >= -0.6)), test = 'F')
+
+
+plotDataFunc <- function(object, k){
+  dat <- invisible(plot(object, residuals = T, select = k))
+  datOut1 <- data.frame(x = dat[[k]]$x, y = dat[[k]]$fit, ysd = dat[[k]]$se)
+  datOut1
+}
+
+plotData1 <- plot(gamReg1, residuals = T, page = 1)
+plotData2 <- plot(gamReg2, residuals = T, page = 1)
+plotData3 <- plot(gamReg3, residuals = T, page = 1)
+plotData4 <- plot(gamReg4, residuals = T, page = 1)
+
+# Generate the graph data.
+{
+g1 <-
+  ggplot(data = plotDataFunc(gamReg1, k = 1)) +
+  geom_line(aes(x, y)) +
+  geom_line(aes(x, y + ysd), lty = 2) +
+  geom_line(aes(x, y - ysd), lty = 2) +
+  scale_x_continuous(breaks = seq(-0.5, 0.5, by = 0.1)) +
+  scale_y_continuous(breaks = seq(-0.02, 0.1, by = 0.02)) +
+  labs(x = 'Domestic maize yield shocks', y = 'Fitted value of the\n smooth function',
+       title = 'A1. Standard deviation of detrended and logged maize real prices') +
+  theme_classic() +
+  theme(axis.text = element_text(color = 'black'),
+        title = element_text(size = 10))
+
+g2 <-
+  ggplot(data = plotDataFunc(gamReg1, k = 2)) +
+  geom_line(aes(x, y)) +
+  geom_line(aes(x, y + ysd), lty = 2) +
+  geom_line(aes(x, y - ysd), lty = 2) +
+  #scale_x_continuous(breaks = seq(-0.3, 0.3, by = 0.1)) +
+  scale_y_continuous(breaks = seq(-0.1, 0.1, by = 0.02)) +
+  labs(x = 'Foreign maize yield shocks', y = 'Fitted value of the\n smooth function',
+       title = 'A2. Standard deviation of detrended and logged maize real prices') +
+  theme_classic() +
+  theme(axis.text = element_text(color = 'black'),
+        title = element_text(size = 10))
+
+
+g3 <-
+  ggplot(data = plotDataFunc(gamReg2, k = 1)) +
+  geom_line(aes(x, y)) +
+  geom_line(aes(x, y + ysd), lty = 2) +
+  geom_line(aes(x, y - ysd), lty = 2) +
+  scale_x_continuous(breaks = seq(-0.5, 0.5, by = 0.1)) +
+  scale_y_continuous(breaks = seq(-0.02, 0.1, by = 0.02)) +
+  labs(x = 'Domestic maize yield shocks', y = 'Fitted value of the\n smooth function',
+       title = 'B1. Standard deviation of monthly changes in logged maize real prices') +
+  theme_classic() +
+  theme(axis.text = element_text(color = 'black'),
+        title = element_text(size = 10))
+
+g4 <-
+  ggplot(data = plotDataFunc(gamReg2, k = 2)) +
+  geom_line(aes(x, y)) +
+  geom_line(aes(x, y + ysd), lty = 2) +
+  geom_line(aes(x, y - ysd), lty = 2) +
+  #scale_x_continuous(breaks = seq(-0.3, 0.3, by = 0.1)) +
+  scale_y_continuous(breaks = seq(-0.1, 0.1, by = 0.02)) +
+  labs(x = 'Foreign maize yield shocks', y = 'Fitted value of the\n smooth function',
+       title = 'B2. Standard deviation of monthly changes in logged maize real prices') +
+  theme_classic() +
+  theme(axis.text = element_text(color = 'black'),
+        title = element_text(size = 10))
+
+
+g5 <-
+  ggplot(data = plotDataFunc(gamReg3, k = 1)) +
+  geom_line(aes(x, y)) +
+  geom_line(aes(x, y + ysd), lty = 2) +
+  geom_line(aes(x, y - ysd), lty = 2) +
+  scale_x_continuous(breaks = seq(-0.5, 0.5, by = 0.1)) +
+  scale_y_continuous(breaks = seq(-0.05, 0.3, by = 0.05)) +
+  labs(x = 'Domestic maize yield shocks', y = 'Fitted value of the\n smooth function',
+       title = 'C1. Range of logged maize real prices') +
+  theme_classic() +
+  theme(axis.text = element_text(color = 'black'),
+        title = element_text(size = 10))
+
+g6 <-
+  ggplot(data = plotDataFunc(gamReg2, k = 2)) +
+  geom_line(aes(x, y)) +
+  geom_line(aes(x, y + ysd), lty = 2) +
+  geom_line(aes(x, y - ysd), lty = 2) +
+  #scale_x_continuous(breaks = seq(-0.3, 0.3, by = 0.1)) +
+  scale_y_continuous(breaks = seq(-0.1, 0.1, by = 0.02)) +
+  labs(x = 'Foreign maize yield shocks', y = 'Fitted value of the\n smooth function',
+       title = 'C2. Range of logged maize real prices') +
+  theme_classic() +
+  theme(axis.text = element_text(color = 'black'),
+        title = element_text(size = 10))
+
+g7 <-
+  ggplot(data = plotDataFunc(gamReg4, k = 1)) +
+  geom_line(aes(x, y)) +
+  geom_line(aes(x, y + ysd), lty = 2) +
+  geom_line(aes(x, y - ysd), lty = 2) +
+  scale_x_continuous(breaks = seq(-0.5, 0.5, by = 0.1)) +
+  scale_y_continuous(breaks = seq(-0.05, 0.3, by = 0.05)) +
+  labs(x = 'Domestic maize yield shocks', y = 'Fitted value of the\n smooth function',
+       title = 'D1. Interquartile of logged maize real prices') +
+  theme_classic() +
+  theme(axis.text = element_text(color = 'black'),
+        title = element_text(size = 10))
+
+g8 <-
+  ggplot(data = plotDataFunc(gamReg4, k = 2)) +
+  geom_line(aes(x, y)) +
+  geom_line(aes(x, y + ysd), lty = 2) +
+  geom_line(aes(x, y - ysd), lty = 2) +
+  #scale_x_continuous(breaks = seq(-0.3, 0.3, by = 0.1)) +
+  scale_y_continuous(breaks = seq(-0.2, 0.1, by = 0.05)) +
+  labs(x = 'Foreign maize yield shocks', y = 'Fitted value of the\n smooth function',
+       title = 'D2. Interquartile of logged maize real prices') +
+  theme_classic() +
+  theme(axis.text = element_text(color = 'black'),
+        title = element_text(size = 10))
+}
+
+g <- grid.arrange(g1, g2, g3, g4, g5, g6, g7, g8, ncol = 2)
+
+ggsave(filename = '../Dropbox (Personal)/ExtShock/4_TablesFigures/Fig_ShockPriceVol.png', plot = g, width = 300, height = 340, units = 'mm')
+
+# Robustness analysis.
+### Alternative choices of ksel:
+r1func <- function(ksel0){
+gamRegKsel0 <- gam(deTrendCubic.SD ~ s(DomYieldShock, bs = 'cr', k = ksel0) +
+                     s(ExtYieldDev.4YearAve, bs = 'cr', k = ksel0) +
+                     REER_SD + BeginStockRatio + perCapitaGDPShock +
+                     factor(Country) + factor(City) + factor(MarketChain) + factor(mktYear),
+                   data = filter(RegressionDat, DomYieldShock >= -0.6))
+plotDataFunc(gamRegKsel0, k = 1) %>% mutate(Label = paste0(ksel0))
+}
+plotDataBase1 <- plotDataFunc(gamReg1, k = 1)
+plotData1 <- lapply(11:30, r1func) %>% bind_rows()
+#plotData12 <- plotData1 %>% mutate(Label = as.numeric(Label)) %>% filter(Label >= 20)
+
+g1 <-
+  ggplot() +
+  #geom_line(data = plotDataBase1, aes(x, y)) +
+  #geom_line(data = plotDataBase1, aes(x, y + ysd), lty = 2) +
+  #geom_line(data = plotDataBase1, aes(x, y - ysd), lty = 2) +
+  geom_line(data = plotData1, aes(x, y, group = Label)) +
+  scale_x_continuous(breaks = seq(-0.5, 0.6, by = 0.1)) +
+  scale_y_continuous(breaks = seq(-0.2, 0.12, by = 0.02)) +
+  labs(x = 'Domestic maize yield shocks', y = 'Fitted value of the smooth function',
+       title = 'A1. Alternative choices of base dimensions: \ndomestic yield shocks') +
+  theme_classic() +
+  theme(axis.text = element_text(color = 'black'),
+        title = element_text(size = 10)) +
+  annotate("text", x = 0.15, y = 0.03, label = "basis dimension > 20", angle = 0, size=5,
+           colour='black') +
+  geom_segment(aes(x = 0.18, y = 0.025, xend = 0.1, yend = 0.01),
+               colour='black', size = 0.5, arrow = arrow(length = unit(0.3, "cm")))
+
+g1
+
+r2func <- function(ksel0){
+  gamRegKsel0 <- gam(deTrendCubic.SD ~ s(DomYieldShock, bs = 'cr', k = ksel0) +
+                       s(ExtYieldDev.4YearAve, bs = 'cr', k = ksel0) +
+                       REER_SD + BeginStockRatio + perCapitaGDPShock +
+                       factor(Country) + factor(City) + factor(MarketChain) + factor(mktYear),
+                     data = filter(RegressionDat, DomYieldShock >= -0.6))
+  plotDataFunc(gamRegKsel0, k = 2) %>% mutate(Label = paste0(ksel0))
+}
+
+plotDataBase2 <- plotDataFunc(gamReg1, k = 2)
+plotData2 <- lapply(11:30, r2func) %>% bind_rows()
+
+g2 <-
+  ggplot() +
+  #geom_line(data = plotDataBase2, aes(x, y)) +
+  #geom_line(data = plotDataBase2, aes(x, y + ysd), lty = 2) +
+  #geom_line(data = plotDataBase2, aes(x, y - ysd), lty = 2) +
+  geom_line(data = plotData2, aes(x, y, group = Label)) +
+  scale_x_continuous(breaks = seq(-0.5, 0.6, by = 0.1)) +
+  scale_y_continuous(breaks = seq(-0.2, 0.12, by = 0.02)) +
+  labs(x = 'Foreign maize yield shocks', y = 'Fitted value of the smooth function',
+       title = 'A2. Alternative choices of base dimensions: \nforeign yield shocks') +
+  theme_classic() +
+  theme(axis.text = element_text(color = 'black'),
+        title = element_text(size = 10)) +
+  annotate("text", x = 0.15, y = 0.035, label = "basis dimension > 20", angle = 0, size=5,
+           colour='black') +
+  geom_segment(aes(x = 0.14, y = 0.025, xend = 0.1, yend = 0.01),
+               colour='black', size = 0.5, arrow = arrow(length = unit(0.3, "cm")))
+
+g2
+
+
+### Alternative trends:
+gamRegRB1 <- gam(deTrendCubic.SD ~ s(DomYieldShock, bs = 'cr', k = ksel) +
+                 s(ExtYieldDev.4YearAve, bs = 'cr', k = ksel) +
+                 REER_SD + BeginStockRatio + perCapitaGDPShock +
+                 factor(Country) + factor(City) + factor(MarketChain) + factor(mktYear),
+               data = filter(RegressionDat, DomYieldShock >= -0.6))
+
+gamRegRB2 <- gam(deTrendHP.SD ~ s(DomYieldShock, bs = 'cr', k = ksel) +
+                   s(ExtYieldDev.4YearAve, bs = 'cr', k = ksel) +
+                   REER_SD + BeginStockRatio + perCapitaGDPShock +
+                   factor(Country) + factor(City) + factor(MarketChain) + factor(mktYear),
+                 data = filter(RegressionDat, DomYieldShock >= -0.6))
+
+gamRegRB3 <- gam(deTrendLinear.SD ~ s(DomYieldShock, bs = 'cr', k = ksel) +
+                   s(ExtYieldDev.4YearAve, bs = 'cr', k = ksel) +
+                   REER_SD + BeginStockRatio + perCapitaGDPShock +
+                   factor(Country) + factor(City) + factor(MarketChain) + factor(mktYear),
+                 data = filter(RegressionDat, DomYieldShock >= -0.6))
+
+gamRegRB4 <- gam(deTrendQuadratic.SD ~ s(DomYieldShock, bs = 'cr', k = ksel) +
+                   s(ExtYieldDev.4YearAve, bs = 'cr', k = ksel) +
+                   REER_SD + BeginStockRatio + perCapitaGDPShock +
+                   factor(Country) + factor(City) + factor(MarketChain) + factor(mktYear),
+                 data = filter(RegressionDat, DomYieldShock >= -0.6))
+
+gamRegRB5 <- gam(deTrendSpline.SD ~ s(DomYieldShock, bs = 'cr', k = ksel) +
+                   s(ExtYieldDev.4YearAve, bs = 'cr', k = ksel) +
+                   REER_SD + BeginStockRatio + perCapitaGDPShock +
+                   factor(Country) + factor(City) + factor(MarketChain) + factor(mktYear),
+                 data = filter(RegressionDat, DomYieldShock >= -0.6))
+
+plotData3 <- bind_rows(plotDataFunc(gamRegRB1, k = 1) %>% mutate(Label = 'Cubic'),
+                      plotDataFunc(gamRegRB2, k = 1) %>% mutate(Label = 'HP'),
+                      plotDataFunc(gamRegRB3, k = 1) %>% mutate(Label = 'Linear'),
+                      plotDataFunc(gamRegRB4, k = 1) %>% mutate(Label = 'Quadratic'),
+                      plotDataFunc(gamRegRB5, k = 1) %>% mutate(Label = 'Spline'))
+
+g3 <-
+  ggplot(data = plotData3) +
+  geom_line(aes(x, y, group = Label)) +
+  #geom_line(aes(x, y + ysd, group = Label), lty = 2) +
+  #geom_line(aes(x, y - ysd, group = Label), lty = 2) +
+  scale_x_continuous(breaks = seq(-0.5, 0.6, by = 0.1)) +
+  scale_y_continuous(breaks = seq(-0.2, 0.1, by = 0.02)) +
+  labs(x = 'Domestic maize yield shocks', y = 'Fitted value of the smooth function',
+       title = 'B1. Alternative specification of maize price trends: \ndomestic yield shocks') +
+  theme_classic() +
+  theme(axis.text = element_text(color = 'black'),
+        title = element_text(size = 10))
+
+g3
+
+plotData4 <- bind_rows(plotDataFunc(gamRegRB1, k = 2) %>% mutate(Label = 'Cubic'),
+                       plotDataFunc(gamRegRB2, k = 2) %>% mutate(Label = 'HP'),
+                       plotDataFunc(gamRegRB3, k = 2) %>% mutate(Label = 'Linear'),
+                       plotDataFunc(gamRegRB4, k = 2) %>% mutate(Label = 'Quadratic'),
+                       plotDataFunc(gamRegRB5, k = 2) %>% mutate(Label = 'Spline'))
+
+
+g4 <-
+  ggplot(data = plotData4) +
+  geom_line(aes(x, y, group = Label)) +
+  #geom_line(aes(x, y + ysd, group = Label), lty = 2) +
+  #geom_line(aes(x, y - ysd, group = Label), lty = 2) +
+  #scale_x_continuous(breaks = seq(-0.3, 0.3, by = 0.1)) +
+  scale_y_continuous(breaks = seq(-0.2, 0.1, by = 0.02)) +
+  labs(x = 'Foreign maize yield shocks', y = 'Fitted value of the smooth function',
+       title = 'B2. Alternative specification of maize price trends: \nforeign yield shocks') +
+  theme_classic() +
+  theme(axis.text = element_text(color = 'black'),
+        title = element_text(size = 10))
+
+g4
+
+### Alternative specification of k for constructing foreign yield shocks.
+gamRegRB1K1 <- gam(deTrendCubic.SD ~ s(DomYieldShock, bs = 'cr', k = ksel) +
+                   s(ExtYieldDev.4YearAve, bs = 'cr', k = ksel) +
+                   REER_SD + BeginStockRatio + perCapitaGDPShock +
+                   factor(Country) + factor(City) + factor(MarketChain) + factor(mktYear),
+                 data = filter(RegressionDat, DomYieldShock >= -0.6))
+
+gamRegRB1K2 <- gam(deTrendCubic.SD ~ s(DomYieldShock, bs = 'cr', k = ksel) +
+                     s(ExtYieldDev.3YearAve, bs = 'cr', k = ksel) +
+                     REER_SD + BeginStockRatio + perCapitaGDPShock +
+                     factor(Country) + factor(City) + factor(MarketChain) + factor(mktYear),
+                   data = filter(RegressionDat, DomYieldShock >= -0.6))
+
+gamRegRB1K3 <- gam(deTrendCubic.SD ~ s(DomYieldShock, bs = 'cr', k = ksel) +
+                     s(ExtYieldDev.2YearAve, bs = 'cr', k = ksel) +
+                     REER_SD + BeginStockRatio + perCapitaGDPShock +
+                     factor(Country) + factor(City) + factor(MarketChain) + factor(mktYear),
+                   data = filter(RegressionDat, DomYieldShock >= -0.6))
+
+plotData5 <- bind_rows(plotDataFunc(gamRegRB1K1, k = 2) %>% mutate(Label = '4'),
+                       plotDataFunc(gamRegRB1K2, k = 2) %>% mutate(Label = '3'),
+                       plotDataFunc(gamRegRB1K3, k = 2) %>% mutate(Label = '2'))
+
+g5 <-
+  ggplot(data = plotData5) +
+  geom_line(aes(x, y, group = Label)) +
+  #scale_x_continuous(breaks = seq(-0.3, 0.3, by = 0.1)) +
+  scale_y_continuous(breaks = seq(-0.2, 0.1, by = 0.02)) +
+  labs(x = 'Foreign maize yield shocks', y = 'Fitted value of the smooth function',
+       title = 'C. Different lagged import data for constructing \nforeign yield shocks') +
+  theme_classic() +
+  theme(axis.text = element_text(color = 'black'),
+        title = element_text(size = 10))
+g5
+
+g <- grid.arrange(g1, g2, g3, g4, g5, ncol = 2)
+
+
+ggsave(filename = '../Dropbox (Personal)/ExtShock/4_TablesFigures/FigRobustness.png',
+       plot = g, width = 240, height = 220, units = 'mm')
+
+# Robustness check.

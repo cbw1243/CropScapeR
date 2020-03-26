@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1584118322352.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "5E0D4F0E",
+    "lastKnownWriteTime" : 1572638844,
+    "last_content_update" : 1572638844,
+    "path" : "C:/Users/bwchen/Dropbox (Personal)/ExtShock/1_Codes/SeasonVis.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "133,0",
+        "scrollLine" : "111"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 11,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

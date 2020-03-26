@@ -1,0 +1,33 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1584222698192.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "D9CBF4D3",
+    "lastKnownWriteTime" : 1295729543560,
+    "last_content_update" : 1584222698192,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "D745C3B3",
+        "caption" : "DomDataM1",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=DomDataM1&cache_key=D745C3B3",
+        "displayedObservations" : 100,
+        "environment" : "",
+        "expression" : "DomDataM1",
+        "object" : "DomDataM1",
+        "preview" : 0,
+        "totalObservations" : 100,
+        "variables" : 5
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 7,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

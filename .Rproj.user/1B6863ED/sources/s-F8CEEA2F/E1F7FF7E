@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1584036269504.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "E1F7FF7E",
+    "lastKnownWriteTime" : 1584112992,
+    "last_content_update" : 1584112992234,
+    "path" : "C:/Users/bwchen/Dropbox (Personal)/ExtShock/1_Codes/Local_DataClean.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "169,27",
+        "scrollLine" : "150"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

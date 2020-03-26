@@ -1,0 +1,252 @@
+
+library(dplyr)
+library(tidyr)
+library(data.table)
+library(xtable)
+library(knitr)
+library(countrycode)
+library(lfe)
+library(grid)
+library(gridExtra)
+library(ggplot2)
+library(readxl)
+library(broom)
+library(AER)
+library(texreg)
+library(mFilter)
+library(stargazer)
+library(splines)
+# x <- dat[[21]]
+# x <- filter(priceData, Country == 'Guatemala')
+# x <- filter(datClean, Country == 'Guatemala')
+#
+# for(j in 1:24){
+#   print(j)
+# for(i in 1:57){
+#   cat(sum(grepl(selCtys[j], colnames(dat[[i]]))))
+# }
+# }
+# selCtys[22]
+#
+# for(i in 1:57){
+#   cat(sum(grepl(selCtys[21], colnames(dat[[i]]))))
+# }
+#
+# print(grepl('Guatemala', colnames(dat[[21]])))
+#-------------------------------------------------------------------------------------------------------------------#
+# Clean the monthly price data from FAOSTAT.
+#>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>#
+rm(list=ls())
+
+file <- list.files(path = '../5_Data/FAOPriceDataRawLocalCurrency/', pattern = '.csv', full.names = T)
+dat <- lapply(file, read.csv, header = T)
+
+clean_dat_func <- function(data){
+  colnames(data)[1] <- 'Time'
+  data <- data %>%
+    gather(ID, Value, 2:ncol(.)) %>%
+    mutate(Value = sub(',', '', Value),
+           Value = as.numeric(Value),
+           Time = as.character(Time))
+  return(data)
+}
+
+datClean <- lapply(dat, clean_dat_func) %>%
+  bind_rows() %>%
+  mutate(ID2 = gsub('..', '_', ID, fixed = T)) %>%
+  separate(col = 'ID2',
+           into = c('Country', 'MarketChain', 'City', 'Commodity', 'Other1', 'Other2'),
+           sep = '_') %>%
+    mutate(TimeFM = as.Date(paste0('01-', Time), format = '%d-%b-%y'),
+           Country = ifelse(Country == 'Eswatini', 'Swaziland', Country)) %>%
+    mutate(Year = year(TimeFM), Month = month(TimeFM)) %>%
+    select(-Time) %>%
+    mutate(ISO = countrycode(Country, 'country.name', 'iso3c'))
+
+# Select the importing countries.
+selCtys <- c('Chile', 'China', 'Colombia', 'Ecuador', 'El.Salvador', 'Guatemala', 'Honduras', 'Mexico',
+             'Nicaragua', 'Panama', 'Peru', 'Philippines', 'Angola', 'Burundi', 'Cabo.Verde',
+             'Cameroon', 'Chad', 'Ghana', 'Kenya', 'Mozambique', 'Namibia', 'Rwanda', 'Swaziland')
+
+rawData <- datClean %>%
+  mutate(TimeFM = as.Date(TimeFM, format = '%Y-%m-%d')) %>%
+  filter(Country %in% selCtys, Year <= 2018, Year >= 2000)
+
+# diffmonth <- function(x1, x2){month(x1) + 12*(year(x1) - year(x2) - 1)  + 13 - month(x2)}
+
+# Check missing values (some price data might be discontinuous)
+checkNum1 <- rawData %>%
+  drop_na() %>%
+  group_by(ID) %>%
+  summarise(Num = n(), maxDate = max(TimeFM), minDate = min(TimeFM))
+
+rawData <- rawData %>%
+  left_join(., checkNum1, by = 'ID') %>%
+  filter(TimeFM >= minDate)
+
+checkNum2 <- rawData %>%
+  group_by(ID) %>%
+  summarise(NumAll = n(), maxDate = max(TimeFM), minDate = min(TimeFM))
+
+checkNum <- full_join(checkNum1, checkNum2, by = 'ID') %>%
+  mutate(completerate = Num/NumAll) %>%
+  filter(completerate >= 0.8)
+
+# test <- filter(rawData, grepl('Guatemala..Wholesale..National.Average', ID))
+
+# Impute missing values for IDs with at least 80% complete rates.
+priceData <- rawData %>%
+  filter(ID %in% unique(checkNum$ID)) %>%
+  group_by(ID) %>%
+  mutate(Value = imputeTS::na_kalman(Value)) %>%
+  mutate(logValue = log(Value)) %>%
+  mutate(ISO = countrycode(Country, 'country.name', 'iso3c')) %>%
+  mutate(Year = year(TimeFM), Month = month(TimeFM))
+
+write.csv(priceData, file = '../5_Data/GIEWS_Monthly_Maize_ImportCtys.csv', row.names = F)
+
+#----------------------------------------------------------------------------------------------------------#
+rm(list = ls())
+
+priceData <- fread(file = '../5_Data/GIEWS_Monthly_Maize_ImportCtys.csv')
+
+# Marketing Year
+{
+  MarketYearMaize <- read_xls('../5_Data/PSD_MarketYear/PSD_MarketYearMaize.xls', sheet = 1, range = 'A2:D227') %>%
+    mutate(Commodity = 'Maize') %>%
+    filter(grepl('2018', Years)) %>%
+    mutate(StartYear = substr(Years, 1, 4), EndYear = substr(Years, 6, 9),
+           StartMonth = match(tolower(substr(`Market Year`, 1, 3)), tolower(month.abb)),
+           EndMonth = match(tolower(substr(`Market Year`, 8, 10)), tolower(month.abb)),
+           YearAdjust = ifelse(substr(`Note`, 6, 9) == substr(`Note`, 35, 38), 'Same', 'Onwards'),
+           ISO = countrycode(Country, 'country.name', 'iso3c')) %>%
+    dplyr::select(5, 8, 9, 10, 11)
+
+  ### Add marketing year information to the dataset.
+  AddDat <- data.frame(matrix(NA, 2, 5))
+  colnames(AddDat) <- colnames(MarketYearMaize)
+  AddDat[1, ] <- c('Maize', 7, 6, 'Same', 'SWZ') # Swaiziland
+  AddDat[2, ] <- c('Maize', 7, 6, 'Same', 'NER') # Niger
+  AddDat$StartMonth <- as.numeric(AddDat$StartMonth)
+  AddDat$EndMonth <- as.numeric(AddDat$EndMonth)
+
+  MarketYearMaize <- bind_rows(MarketYearMaize, AddDat)
+}
+
+# Merge with the market year information.
+selPriceDataIntra <- priceData %>%
+  left_join(., MarketYearMaize, by = c('ISO')) %>%
+  mutate(mktYear = ifelse(Month < StartMonth, Year - 1, Year)) %>%
+  group_by(ISO, ID,  Country, City, MarketChain, Other1, Other2, mktYear) %>%
+  arrange(Month, .by_group = T) %>%
+  mutate(changeLogValue = logValue - dplyr::lag(logValue)) %>%
+  summarise(PriceCV = sd(Value, na.rm = T)/mean(Value, na.rm = T),
+            SDlogChange = sd(changeLogValue, na.rm = T),
+            PriceGap = (max(Value) - min(Value))/mean(Value, na.rm = T),
+            PriceIQR = IQR(Value)/mean(Value, na.rm = T),
+            Num = n()) %>%
+  filter(Num > 6)
+
+write.csv(selPriceDataIntra , file = '../5_Data/FAOMaizePriceMktYearVAR_LocalCurrency_Mar2020.csv', row.names = F)
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<#
+
+
+#-------------------------------------------------------------------------------------------------------------------#
+# Construct annual data as control variables.
+#>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>#
+# Foreign yield shocks are constructed by through the script "ForeignYieldShockV2.r".
+rm(list = ls())
+
+PriceVolDat <- fread('../5_Data/FAOMaizeMonthPriceDeTrendDeSeason_May2019.csv') %>%
+  mutate(ISO = countrycode(Country, 'country.name', 'iso3c'))
+
+# Marketing Year
+{
+  MarketYearMaize <- read_xls('../5_Data/PSD_MarketYear/PSD_MarketYearMaize.xls', sheet = 1, range = 'A2:D227') %>%
+    mutate(Commodity = 'Maize') %>%
+    filter(grepl('2018', Years)) %>%
+    mutate(StartYear = substr(Years, 1, 4), EndYear = substr(Years, 6, 9),
+           StartMonth = match(tolower(substr(`Market Year`, 1, 3)), tolower(month.abb)),
+           EndMonth = match(tolower(substr(`Market Year`, 8, 10)), tolower(month.abb)),
+           YearAdjust = ifelse(substr(`Note`, 6, 9) == substr(`Note`, 35, 38), 'Same', 'Onwards'),
+           ISO = countrycode(Country, 'country.name', 'iso3c')) %>%
+    dplyr::select(5, 8, 9, 10, 11)
+
+  ### Add marketing year information to the dataset.
+  AddDat <- data.frame(matrix(NA, 2, 5))
+  colnames(AddDat) <- colnames(MarketYearMaize)
+  AddDat[1, ] <- c('Maize', 7, 6, 'Same', 'SWZ') # Swaiziland
+  AddDat[2, ] <- c('Maize', 7, 6, 'Same', 'NER') # Niger
+  AddDat$StartMonth <- as.numeric(AddDat$StartMonth)
+  AddDat$EndMonth <- as.numeric(AddDat$EndMonth)
+
+  MarketYearMaize <- bind_rows(MarketYearMaize, AddDat)
+  }
+
+# Real exchange rate.
+#splineTrendFunc <- function(x, y) lm(x ~ bs(y, 3, degree = 2))$residual
+
+RealExchangeRate0 <- fread('../5_Data/REER_database_ver28Jun2018_Monthly.csv')
+colnames(RealExchangeRate0)[1] <- 'Year'
+
+RealExchangeRateVol <- RealExchangeRate0 %>%
+  gather(tmp, REERZsolt, 2:ncol(.)) %>%
+  filter(!is.na(REERZsolt)) %>%
+  mutate(iso2c = substr(tmp, 10, 11),
+         ISO = countrycode(iso2c, 'iso2c', 'iso3c'),
+         REERZsolt = log(as.numeric(REERZsolt))) %>%
+  filter(ISO %in% unique(PriceVolDat$ISO)) %>%
+  select(Year, ISO, REERZsolt) %>%
+  mutate(Month = as.numeric(substr(Year, 6, 7)),
+         Year = as.numeric(substr(Year, 1, 4))) %>%
+  filter(Year >= 1999) %>%
+  group_by(ISO) %>%
+  arrange(ISO, Year, Month, .by_group = T) %>%
+  mutate(Trend = 1:n()) %>%
+  mutate(#REERZsoltDeTrend = splineTrendFunc(REERZsolt, Trend),
+    REERZsoltDeTrend = hpfilter(REERZsolt, type = 'lambda', freq = 129600)$cycle) %>% # Use section X to show the data fitting.
+  left_join(., MarketYearMaize, by = 'ISO') %>%
+  mutate(mktYear = ifelse(Month < StartMonth, Year - 1, Year)) %>%
+  group_by(ISO, mktYear) %>%
+  summarise(REER_SD = sd(REERZsoltDeTrend, na.rm = TRUE))
+
+# # section X
+# RealExchangeRateVol %>%
+#   mutate(fitted = REERZsolt - REERZsoltDeTrend) %>%
+#   ggplot(data = .) +
+#   geom_line(aes(Trend, REERZsolt, group = Year)) +
+#   geom_line(aes(Trend, fitted, group = Year, col = 'red')) +
+#   facet_wrap(~ ISO, scales = 'free')
+
+# Imports and stocks
+ImportStock <- fread(input = '../5_Data/PSD_Maize_Rice_Wheat.csv') %>%
+  spread(Attribute, Value) %>%
+  mutate(Commodity = case_when(grepl('Rice', Commodity)~ 'Rice',
+                               grepl('Corn', Commodity)~ 'Maize',
+                               TRUE~Commodity)) %>%
+  dplyr::filter(Year <= 2017, Commodity %in% c('Maize')) %>%
+  mutate(NetImportRatio = (Imports - Exports)/`Domestic Consumption`,
+         BeginStockRatio = `Beginning Stocks`/`Domestic Consumption`,
+         EndStockRatio = `Ending Stocks`/`Domestic Consumption`) %>%
+  mutate(ISO = countrycode(Country, 'country.name', 'iso3c')) %>%
+  rename(DomConsump = `Domestic Consumption`) %>%
+  dplyr::select(Year, ISO, NetImportRatio, BeginStockRatio, DomConsump, EndStockRatio) %>%
+  mutate(StockChange = BeginStockRatio - EndStockRatio)
+
+AnnualData <- RealExchangeRateVol %>%
+  left_join(., ImportStock, by = c('mktYear' = 'Year', 'ISO'))
+
+write.csv(AnnualData, file = '../5_Data/RegressionAnnualData_May2019.csv', row.names = F)
+
+
+# Imports and Domestic Yields.
+
+
+
+
+
+
+
+
+
+

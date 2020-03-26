@@ -1,0 +1,148 @@
+# Visualize the price seasonality.  
+rm(list = ls())
+library(ggplot2)
+
+DeSeasonData <- fread('../5_Data/FAOMaizeMonthPriceDeTrendDeSeasonAllTypes_May2019.csv')
+ControlData <- fread('../5_Data/RegressionAnnualData_May2019.csv')
+MarketYearMaize <- readxl::read_xls('../5_Data/PSD_MarketYear/PSD_MarketYearMaize.xls', sheet = 1, range = 'A2:D227') %>%
+  mutate(Commodity = 'Maize') %>%
+  filter(grepl('2018', Years)) %>%
+  mutate(StartYear = substr(Years, 1, 4), EndYear = substr(Years, 6, 9),
+         StartMonth = match(tolower(substr(`Market Year`, 1, 3)), tolower(month.abb)),
+         EndMonth = match(tolower(substr(`Market Year`, 8, 10)), tolower(month.abb)),
+         YearAdjust = ifelse(substr(`Note`, 6, 9) == substr(`Note`, 35, 38), 'Same', 'Onwards'),
+         ISO = countrycode::countrycode(Country, 'country.name', 'iso3c')) %>%
+  dplyr::select(8, 11)
+
+# R squared of fitted seasonal models.
+Rsquared <- DeSeasonData %>%
+  group_by(Country, Group) %>%
+  summarise(Spline.r.squared = mean(Spline.r.squared)) %>%
+  group_by(Country) %>%
+  summarise(Spline.r.squared = mean(Spline.r.squared)) 
+  
+
+
+# Analyze imports of countries with and without seasonality. 
+NetImports <- ControlData %>%
+  filter(mktYear >= 2005, mktYear <= 2017) %>%
+  group_by(ISO) %>%
+  summarise(NetImportRatio = 100*mean(NetImportRatio, na.rm = T))
+
+# Countries with seasonality and without seasonality
+seasonCty <- DeSeasonData %>%
+  select(Country, Group, contains('HP.p.value')) %>%
+  group_by(Country, Group) %>%
+  summarise(HP.p.value = mean(HP.p.value)) %>%
+  mutate(seasonGroup = ifelse(HP.p.value <= 0.1, 1, 0), 
+         ISO = countrycode(Country, 'country.name', 'iso3c')) %>%
+  group_by(ISO) %>%
+  summarise(seasonGroup = mean(seasonGroup)) %>%
+  mutate(seasonGroup = ifelse(seasonGroup >= 0.5, 1, 0)) %>%
+  left_join(., NetImports, by = 'ISO')
+
+mean(filter(seasonCty, seasonGroup == 1)$NetImportRatio)
+mean(filter(seasonCty, seasonGroup == 0)$NetImportRatio)
+sd(filter(seasonCty, seasonGroup == 1)$NetImportRatio)
+sd(filter(seasonCty, seasonGroup == 0)$NetImportRatio)
+
+t.test(filter(seasonCty, seasonGroup == 1)$NetImportRatio, 
+       filter(seasonCty, seasonGroup == 0)$NetImportRatio)
+
+meanDif <- seasonCty %>%
+  group_by(seasonGroup) %>%
+  summarise(NetImportRatio = mean(NetImportRatio))
+
+meanDif
+
+
+
+#--------------------------------------------------------------------------------#
+# Visualize the seasonality.
+#>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>#
+MonthSeason <- DeSeasonData %>%
+  #filter(Quadratic.p.value <= 0.1) %>%
+  select(Country, Group, TimeFM, 
+         contains('Spline.fitted'), contains('Spline.p.value')) %>%
+  mutate(TimeFM = as.Date(TimeFM, format = '%Y-%m-%d')) %>%
+  mutate(Month = month(TimeFM)) %>%
+  group_by(Country, Group, Month) %>%
+  summarise(Spline.fitted = mean(Spline.fitted),
+            Spline.p.value = mean(Spline.p.value))
+
+# Number of countries with seasonality
+unique(MonthSeason$Country)
+length(unique(MonthSeason$Country))
+# 19 out of 24 countries have seasonality. 
+
+g <- MonthSeason %>%
+  filter(Spline.p.value <= 0.1) %>%
+  ggplot(data = .) +
+  geom_line(aes(Month, Spline.fitted, col = Group)) +
+  geom_hline(yintercept = 0, lty = 2) +
+  scale_x_continuous(breaks = seq(1, 12, 2)) +
+  facet_wrap(~ Country, scales = 'free_y', ncol = 4) +
+  labs(x = '', y = 'Seasonality in detrended log prices') +
+  theme_light() +
+  theme(legend.position = '',
+        strip.text = element_text(color = 'black'),
+        strip.background = element_rect(fill = 'white', 
+                                        color = 'black'))
+g
+
+ggsave(g, filename = '../4_TablesFigures/Fig.Seasonality.png', 
+       width = 240, height = 240, units = 'mm')
+
+
+# Calculate seasonal gap for countries with significant seasonality. 
+priceSeasonality <- MonthSeason %>%
+  group_by(Country, Group) %>%
+  mutate(maxPrice = max(Spline.fitted), minPrice = min(Spline.fitted)) %>%
+  mutate(minMonth = ifelse(Spline.fitted == minPrice, Month, NA)) %>%
+  summarise(maxPrice = mean(maxPrice), minPrice = mean(minPrice),
+            minMonth = mean(minMonth, na.rm = T),
+            Pvalue = mean(Spline.p.value)) %>%
+  mutate(seasonGap = round(100*(maxPrice - minPrice), 1)) %>%
+  select(-maxPrice, -minPrice) %>%
+  group_by(Country) %>%
+  arrange(desc(seasonGap), .by_group = T) %>%
+  slice(1) %>%
+  ungroup() %>%
+  mutate(ISO = countrycode::countrycode(Country, 'country.name', 'iso3c')) %>%
+  left_join(., MarketYearMaize, by = 'ISO') %>%
+  left_join(., NetImports, by = 'ISO') %>%
+  select(Country, seasonGap, minMonth, StartMonth, NetImportRatio, Pvalue)
+  # mutate(sigGroup = ifelse(Pvalue <= 0.1, 'sig', 'notsig'),
+  #        Country = ifelse(Pvalue > 0.1, paste0('(', Country, ')'), Country))
+
+g <- 
+ggplot(data = priceSeasonality) +
+  geom_point(aes(NetImportRatio/100, seasonGap/100), size = 0.5) +
+  geom_text(aes(NetImportRatio/100, seasonGap/100, label = Country)) +
+  scale_x_continuous(breaks = seq(0, 80/100, by = 10/100)) +
+  scale_y_continuous(breaks = seq(0, 60/100, by = 10/100)) +
+  #scale_color_manual(values = c('#E84A27', '#003366')) +
+  #scale_shape_manual(values = c(1, 8)) +
+  labs(x = 'Net imports/Consumption of maize, averages during 2005-2017', y = 'Maize price seasonality') +
+  theme_light() +
+  theme(legend.position = '')
+
+g
+
+ggsave(g, filename = '../4_TablesFigures/Fig.SeasonalityImports.png', 
+       width = 200, height = 160, units = 'mm')
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<#
+splineTrendFunc <- function(x, y) lm(x ~ bs(y, 3, degree = 2))$residual
+
+IntlMaizePrice <- fread('../5_Data/IntlMaizePrice.csv')
+
+IntlMaizePriceDetrend <- IntlMaizePrice %>%
+  mutate(Trend = 1:n()) %>%
+  mutate(X = splineTrendFunc(log(`INTERNATIONAL PRICES, Export, US (Gulf), Maize (US No. 2, Yellow), US Dollar/kg Commodity Code: CMM100503`), Trend)) %>%
+  mutate(MonthAbb = substr(`Date-Monthly`, 4, 6),
+         Month = match(MonthAbb, month.abb)) %>%
+  mutate(cosValue = cos(Month*pi/6), sinValue = sin(Month*pi/6))
+
+test <- lm(X ~ cosValue + sinValue, data = IntlMaizePriceDetrend) 
+summary(test)

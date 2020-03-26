@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1585200443960.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "B0D4746D",
+    "lastKnownWriteTime" : 1585200524,
+    "last_content_update" : 1585200524959,
+    "path" : "C:/Users/bwchen/Box/bowen/CropScapeR/R/GetCDLData.R",
+    "project_path" : "R/GetCDLData.R",
+    "properties" : {
+        "cursorPosition" : "23,20",
+        "scrollLine" : "6"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
