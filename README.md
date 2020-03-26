@@ -1,53 +1,34 @@
 ## CropScapeR: Access Cropland Data Layer data via the CropScape web service
 
-The [Cropland Data Layer (CDL)](https://www.nass.usda.gov/Research_and_Science/Cropland/sarsfaqs2.php) is a raster, geo-referenced, crop-specific land cover data layer, and it provides crop-specific land cover classification product of more than 100 crop categories grown in the United States over time. The CDL is administered by the National Agricultural Statistics Service (NASS) of the United States Department of Agriculture. 
+The [Cropland Data Layer (CDL)](https://www.nass.usda.gov/Research_and_Science/Cropland/sarsfaqs2.php) is a data product produced by the National Agricultural Statistics Service of U.S. Department of Agriculture. It provides geo-referenced, high accuracy, 30 or 56 m resolution, crop-specific cropland land cover information for up to 48 contiguous states in the U.S. from 1997 to the present. This product has been extensively used in the agriculture research. 
 
-All historical CDL products are available for use and free for download through [CropScape](https://nassgeodata.gmu.edu/CropScape/), a web interface. However, the CropScape does not provide services of bulk downloading or calculation of land use changes over time, which could lead to inconvience in empirical works. The development of the `cdlRotate` aims to fill this gap. 
+[CropScape](https://nassgeodata.gmu.edu/CropScape/) is an interactive Web CDL exploring system, which was developed to query, visualize, disseminate, and analyze CDL data geospatially through standard geospatial Web services in a publicly accessible online environment. The development of this package is to provide R functions that allow R users to easily utilize the geospatial processing services provided by CropScape. These services allow users to effectively and efficiently access and analyze the CDL data. 
 
-Specifically, the objectives of the `cdlRotate` package are threefold. First, it aims to provide easy access to data for any Area Of Interest (AOI) specified by users. The AOI could be a county, a triangle, a rectangle, or a single point. Second, it aims to calculate land use changes, including crop rotations (e.g., corn -- soybeans) over time for an AOI. Third, it visualizes the data on land use changes for an AOI. 
+## Key functions     
+[CropScape](https://nassgeodata.gmu.edu/CropScape/) provide four essential geospatial processing services: 
 
-## Key functions   
-The `cdlRotate` package contains three functions to achieve the objectives: 
+1. `GetCDLValue`/`GetCDLFile`         
+The `GetCDLValue` service finds the pixel value at a given location (defined by a coordinate), and the `GetCDLFile` service fetches irregularly shaped CDL data. The shape could be a county boundary (defined by county FIPS code), a triangle area (defined by three coordinates), or a rectangle/box (defined by four corner points). The `GetCDLValue` and `GetCDLFile` services are implemented by a single R function: `GetCDLData`. The `GetCDLData` function takes an Area of Interest (AOI) and a crop year value as inputs and return the CDL raster data. The raster data can be saved as TIF file or a data table. Examples are provided in the help file of `GetCDLData`.    
+2. `GetCDLImage`         
+The `GetCDLImage` service generates the preview images of the customized CDL data and the Keyhole Markup Language (KML) file with links to actual images that can be displayed in Google Earth. This service is implemented by the `GetCDLImage` function.
 
-- Data access    
+3. `GetCDLStat`          
+The `GetCDLImage` service generates statistical information (for example, value, category name, and acreage) of the CDL data of an AOI. This service is implemented by the `GetCDLStat` function.
 
-The `GetCDLData` function is a wrapper function that downloads the data for an user specified AOI. An AOI could be a county defined by FIPS code, a triangle defined by three coordinates, a rectangle defined by four corner points, or a single point defined by a coordinate. The coordinates can be longitude/latitude. Below are two examples, and more examples are provided in the help file of `GetCDLData`.    
-```
-# Example 1. Retrieve data for the Champaign county in Illinois (FIPS = 17109) in 2018.
-data <- GetCDLData(aoi = 17019, year = 2018, type = 'f')
+4. `GetCDLComp`            
+The `GetCDLComp` service performs cropland change analysis by comparing the pixels of the cropland area defined by AOI between two given years. This service is implemented by the `GetCDLComp` function.
 
-# Example 2. Retrieve data for a triangle defined by three coordinates in 2018.
-data <- GetCDLData(aoi = c(175207,2219600,175207,2235525,213693,2219600), year = 2018, type = 'ps')
-
-# Example 3. Retrieve data for a single point by long/lat in 2018.
-data <- GetCDLData(aoi = c(-94.6754,42.1197), year = 2018, type = 'p', crs = '+init=epsg:4326')
-```
-The retrieved data can be a raster file or a matrix, depending on users' choice of the `mat` argument in `GetCDLData` function. The data can then be saved using a standard approach. Note that `GetCDLData` retrieves data for one AOI in one year at a time. Users could use functions in the `apply` family to retrieve data for multiple AOIs in multiple years.   
-
-- Land use change   
-The `rotate` function calculates land use changes between any two years. For instance, if user is interested in land use change for the Champaign county from 2017 to 2018, run the following codes: 
-```
-rotatedata <- rotate(aoi = 17019, year1 = 2017, year2 = 2018, type = 'f')
-```
-The syntax of the `rotate` function is straightforward. The function is flexible with the choice of time. For example, users could also let `year1` be 2010 and `year2` be 2018 to investigate the land use changes in the long run. The returned file is a data frame that records number of pixels (or grid cells). For CDL at 30-meter resolution, each pixel represents an area of 900 square meters.   
-
-- Land use visualization   
-
-The `plorRot` function visualizes the land use change data generated by the `rotate` function. The returned file is a `ggplot` object since it is built on the `ggplot2` package.    
-```
-plotRot(rotate) 
-```
 
 ## Package installation   
 To install the package, run the following codes in `R`:
 ```
 install.packages("devtools") # Run this if the devtools package is not installed.     
-devtools::install_github("cbw1243/cdlRotate")  
+devtools::install_github("cbw1243/CropScapeR")  
 ```
-Note the `cdlRotate` package depends on the `rgdal` and `sp` packages to process the raster files. 
+Note the `CropScapeR` package depends on the `rgdal` and `sp` packages to process the raster files. 
 
 ## Development   
-The package is initially released on February 27, 2020 at GitHub to collect users feedbacks. The package will be submitted to CRAN. If you have any suggestion, please contact the author.
+The package is initially released on March 26, 2020 at GitHub to collect users feedbacks. The package will be submitted to CRAN. If you have any suggestion, please contact the author.
 
 Note that the package could be updated at any time at the current stage. To enjoy the latest version, install again before using it.
 
