@@ -5,7 +5,7 @@ The [Cropland Data Layer (CDL)](https://www.nass.usda.gov/Research_and_Science/C
 [CropScape](https://nassgeodata.gmu.edu/CropScape/) is an interactive Web CDL exploring system, which was developed to query, visualize, disseminate, and analyze CDL data geospatially through standard geospatial Web services in a publicly accessible online environment. The development of this package is to provide R functions that allow R users to easily utilize the geospatial processing services provided by CropScape. These services allow users to effectively and efficiently access and analyze the CDL data. 
 
 ## Key functions     
-[CropScape](https://nassgeodata.gmu.edu/CropScape/) provide four essential geospatial processing services: 
+We implement four geospatial processing services provided by [CropScape](https://nassgeodata.gmu.edu/CropScape/) in R: 
 
 1. `GetCDLValue`/`GetCDLFile`         
 The `GetCDLValue` service finds the pixel value at a given location (defined by a coordinate), and the `GetCDLFile` service fetches irregularly shaped CDL data. The shape could be a county boundary (defined by county FIPS code), a triangle area (defined by three coordinates), or a rectangle/box (defined by four corner points). The `GetCDLValue` and `GetCDLFile` services are implemented by a single R function: `GetCDLData`. The `GetCDLData` function takes an Area of Interest (AOI) and a crop year value as inputs and return the CDL raster data. The raster data can be saved as TIF file or a data table. Examples are provided in the help file of `GetCDLData`.    
