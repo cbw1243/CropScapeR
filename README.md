@@ -18,6 +18,7 @@ The `GetCDLImage` service generates statistical information (for example, value,
 4. `GetCDLComp`            
 The `GetCDLComp` service performs cropland change analysis by comparing the pixels of the cropland area defined by AOI between two given years. This service is implemented by the `GetCDLComp` function.
 
+Examples using the `R` functions are provided in the function help files. CropScape provides several other geoprocessing services, and they would be implemented in R in future developments. 
 
 ## Package installation   
 To install the package, run the following codes in `R`:
@@ -37,3 +38,8 @@ The development of this package was supported by USDA-NRCS Agreement No. NR193A7
 
 ## Contact   
 [Bowen Chen](https://sites.google.com/view/bwchen), PhD (bwchen@illinois.edu)
+
+## Reference   
+
+[1] Boryan, Claire, Zhengwei Yang, Rick Mueller, and Mike Craig. 2011. Monitoring US Agriculture: The US Department of Agriculture, National Agricultural Statistics Service, Cropland Data Layer Program. *Geocarto International* 26 (5): 341–58. https://doi.org/10.1080/10106049.2011.562309.
+
