@@ -2,21 +2,21 @@
 
 The [Cropland Data Layer (CDL)](https://www.nass.usda.gov/Research_and_Science/Cropland/sarsfaqs2.php) is a data product produced by the National Agricultural Statistics Service of U.S. Department of Agriculture. It provides geo-referenced, high accuracy, 30 or 56 m resolution, crop-specific cropland land cover information for up to 48 contiguous states in the U.S. from 1997 to the present. This data product has been extensively used in the agriculture research [1]. 
 
-[CropScape](https://nassgeodata.gmu.edu/CropScape/) is an interactive Web CDL exploring system, and it was developed to query, visualize, disseminate, and analyze CDL data geospatially through standard geospatial Web services in a publicly accessible online environment.[2] The development of this package is to provide R functions that allow R users to easily utilize the geospatial processing services provided by CropScape. These services allow users to effectively and efficiently access and analyze the CDL data. 
+[CropScape](https://nassgeodata.gmu.edu/CropScape/) is an interactive Web CDL exploring system, and it was developed to query, visualize, disseminate, and analyze CDL data geospatially through standard geospatial Web services in a publicly accessible online environment[2]. The development of the `CropScapeR` package is to allow R users to easily utilize the geospatial processing services provided by CropScape, so that users can effectively and efficiently access and analyze the CDL data. 
 
 ## Key functions     
-We implement four geospatial processing services provided by [CropScape](https://nassgeodata.gmu.edu/CropScape/) in R: 
+We implement four geospatial processing services provided by [CropScape](https://nassgeodata.gmu.edu/CropScape/) in `R`: 
 
 1. `GetCDLValue`/`GetCDLFile`         
-The `GetCDLValue` service finds the pixel value at a given location (defined by a coordinate), and the `GetCDLFile` service fetches irregularly shaped CDL data. The shape could be a county boundary (defined by county FIPS code), a triangle area (defined by three coordinates), or a rectangle/box (defined by four corner points). The `GetCDLValue` and `GetCDLFile` services are implemented by a single R function: `GetCDLData`. The `GetCDLData` function takes an Area of Interest (AOI) and a crop year value as inputs and return the CDL raster data. The raster data can be saved as TIF file or a data table. Examples are provided in the help file of `GetCDLData`.    
+The `GetCDLValue` service finds the pixel value at a given location (defined by a coordinate), and the `GetCDLFile` service fetches irregularly shaped CDL data[2]. The shape could be a county boundary (defined by county FIPS code), a triangle area (defined by three coordinates), or a rectangle/box (defined by four corner points). The `GetCDLValue` and `GetCDLFile` services are implemented by a single R function: `GetCDLData`. The `GetCDLData` function takes an Area of Interest (AOI) and a crop year value as inputs and return the CDL raster data. The raster data can be saved as TIF file or a data table. Examples are provided in the help file of `GetCDLData`.    
 2. `GetCDLImage`         
-The `GetCDLImage` service generates the preview images of the customized CDL data and the Keyhole Markup Language (KML) file with links to actual images that can be displayed in Google Earth. This service is implemented by the `GetCDLImage` function.
+The `GetCDLImage` service generates the preview images of the customized CDL data and the Keyhole Markup Language (KML) file with links to actual images that can be displayed in Google Earth[2]. This service is implemented by the `GetCDLImage` function.
 
 3. `GetCDLStat`          
-The `GetCDLImage` service generates statistical information (for example, value, category name, and acreage) of the CDL data of an AOI. This service is implemented by the `GetCDLStat` function.
+The `GetCDLImage` service generates statistical information (for example, value, category name, and acreage) of the CDL data of an AOI[2]. This service is implemented by the `GetCDLStat` function.
 
 4. `GetCDLComp`            
-The `GetCDLComp` service performs cropland change analysis by comparing the pixels of the cropland area defined by AOI between two given years. This service is implemented by the `GetCDLComp` function.
+The `GetCDLComp` service performs cropland change analysis by comparing the pixels of the cropland area defined by AOI between two given years[2]. This service is implemented by the `GetCDLComp` function.
 
 Examples using the `R` functions are provided in the function help files. CropScape provides several other geoprocessing services, and they would be implemented in R in future developments. 
 
