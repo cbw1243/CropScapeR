@@ -7,8 +7,8 @@ GetCDLDataF <- function(fips, year){
   num <- gregexpr('returnURL', dataX)
   url2 <- substr(dataX, num[[1]][1]+10, num[[1]][2]-3)
 
-  data <- raster::raster(url2)
-  return(data)
+  outdata <- raster::raster(url2)
+  return(outdata)
 }
 
 
@@ -42,8 +42,8 @@ GetCDLDataPs <- function(points, year, mat = F){
   num <- gregexpr('returnURL', url2X)[[1]]
   url2 <- substr(url2X, num[1]+10, num[2]-3)
 
-  data <- raster::raster(url2)
-  return(data)
+  outdata <- raster::raster(url2)
+  return(outdata)
 }
 
 GetCDLDataB <- function(box, year, mat = F){
@@ -55,8 +55,43 @@ GetCDLDataB <- function(box, year, mat = F){
   num <- gregexpr('returnURL', url2X)[[1]]
   url2 <- substr(url2X, num[1]+10, num[2]-3)
 
-  data <- raster::raster(url2)
-  return(data)
+  outdata <- raster::raster(url2)
+  return(outdata)
+}
+
+manualrotate <- function(aoi, year1, year2, type = NULL, crs = NULL){
+  datat1 <- GetCDLData(aoi = aoi, year = year1, mat = FALSE, type = type, crs = crs)
+  datat2 <- GetCDLData(aoi = aoi, year = year2, mat = FALSE, type = type, crs = crs)
+
+  res1 <- raster::res(datat1)
+  res2 <- raster::res(datat2)
+
+  if(res1[1] > res2[1]){datat2 <- raster::resample(datat2, datat1, method = "ngb")}
+  if(res1[1] < res2[1]){datat1 <- raster::resample(datat1, datat2, method = "ngb")}
+
+  stopifnot(raster::res(datat1)[1] == raster::res(datat2)[1])
+  conversionfactor <- ifelse(raster::res(datat1) == 56, 0.774922, 0.222394)
+
+  datat1 <- raster::rasterToPoints(datat1)
+  datat2 <- raster::rasterToPoints(datat2)
+
+  datat1 <- data.table::as.data.table(datat1)
+  datat2 <- data.table::as.data.table(datat2)
+
+  pixelcounts <- merge(datat1, datat2, by = c('x', 'y')) %>%
+    as.data.frame() %>%
+    'colnames<-'(c('x', 'y', 'value.x', 'value.y')) %>%
+    dplyr::filter(value.x > 0, value.y > 0) %>%
+    dplyr::group_by(value.x, value.y) %>%
+    dplyr::summarise(Count = dplyr::n()) %>%
+    dplyr::left_join(., linkdata, by = c('value.x' = 'MasterCat')) %>%
+    dplyr::left_join(., linkdata, by = c('value.y' = 'MasterCat')) %>%
+    dplyr::ungroup() %>%
+    dplyr::select(-value.x, -value.y) %>%
+    dplyr::rename(From = Crop.x, To = Crop.y) %>%
+    dplyr::mutate(Acreage = Count*conversionfactor)
+
+  return(pixelcounts)
 }
 
 GetCDLCompF <- function(fips, year1, year2, mat = TRUE){
@@ -65,17 +100,29 @@ GetCDLCompF <- function(fips, year1, year2, mat = TRUE){
   data <- httr::GET(url)
   dataX <- httr::content(data, 'text')
 
-  if(isTRUE(mat)){
+  if(data$status_code == 200){
+    if(isTRUE(mat)){
     num <- gregexpr('returnReportURL', dataX)
     url2 <- substr(dataX, num[[1]][1]+16, num[[1]][2]-3)
-    data <- data.table::fread(url2)
-    data$aoi <- fips
-  }else{
+    outdata <- data.table::fread(url2)
+    if(nrow(outdata) == 0) stop(paste0('Error: The CDL TIF files are likely corrupted.'))
+    outdata$aoi <- fips
+    }else{
     num <- gregexpr('returnTIFURL', dataX)
     url2 <- substr(dataX, num[[1]][1]+13, num[[1]][2]-3)
-    data <- raster::raster(url2)
+    outdata <- raster::raster(url2)
+    }
+  }else{
+    if(grepl('ERROR 1: TIFFFetchDirectory', dataX) | grepl('Mismatch size of file 1 and file 2', dataX)){
+      outdata <- manualrotate(aoi = fips, year1 = year1, year2 = year2, type = 'f')
+      if(nrow(outdata) == 0) stop('The manually calculated crop cover change data has no observation. Something is wrong with the CDL data.')
+      outdata$aoi <- fips
+      warning(paste0('Warning: CropScape cannot calculate the crop cover changes. So use manual calculations. Error message from CropScape is :', dataX))
+    }else{
+      stop(paste0('Error: The requested data might not exist in the CDL database. Error message from CropScape is :', dataX))
+    }
   }
-  return(data)
+  return(outdata)
 }
 
 
@@ -86,22 +133,33 @@ GetCDLCompB <- function(box, year1, year2, mat = TRUE){
   data <- httr::GET(url)
   dataX <- httr::content(data, 'text')
 
-  if(isTRUE(mat)){
-    num <- gregexpr('returnReportURL', dataX)
-    url2 <- substr(dataX, num[[1]][1]+16, num[[1]][2]-3)
-    data <- RJSONIO::fromJSON(url2)$ow
+  if(data$status_code == 200){
+    if(isTRUE(mat)){
+      num <- gregexpr('returnReportURL', dataX)
+      url2 <- substr(dataX, num[[1]][1]+16, num[[1]][2]-3)
+      outdataX <- RJSONIO::fromJSON(url2)$ow
 
-    data <- lapply(data, function(x) data.frame(matrix(unlist(x), nrow = 1), stringsAsFactors = F))
-    data <- dplyr::bind_rows(data)[,-1]
-    colnames(data) <- c('From', 'To', 'Count', 'Acreage')
-    data$aoi <- box
+      outdata <- lapply(outdataX, function(x) data.frame(matrix(unlist(x), nrow = 1), stringsAsFactors = F))
+      outdata <- dplyr::bind_rows(outdata)[,-1]
+      colnames(outdata) <- c('From', 'To', 'Count', 'Acreage')
+      outdata$aoi <- box
 
+    }else{
+      num <- gregexpr('returnTIFURL', dataX)
+      url2 <- substr(dataX, num[[1]][1]+13, num[[1]][2]-3)
+      outdata <- raster::raster(url2)
+   }
   }else{
-    num <- gregexpr('returnTIFURL', dataX)
-    url2 <- substr(dataX, num[[1]][1]+13, num[[1]][2]-3)
-    data <- raster::raster(url2)
+    if(grepl('ERROR 1: TIFFFetchDirectory', dataX) | grepl('Mismatch size of file 1 and file 2', dataX)){
+      outdata <- manualrotate(aoi = box, year1 = year1, year2 = year2, type = 'b')
+      if(nrow(outdata) == 0) stop('The manually calculated crop cover change data has no observation. Something is wrong with the CDL data.')
+      outdata$aoi <- box
+      warning(paste0('Warning: CropScape cannot calculate the crop cover changes. So use manual calculations. Error message from CropScape is :', dataX))
+    }else{
+      stop(paste0('Error: The requested data might not exist in the CDL database. Error message from CropScape is :', dataX))
+    }
   }
-  return(data)
+  return(outdata)
 }
 
 
@@ -112,17 +170,28 @@ GetCDLCompPs <- function(points, year1, year2, mat = TRUE){
   data <- httr::GET(url)
   dataX <- httr::content(data, 'text')
 
-  if(isTRUE(mat)){
-    num <- gregexpr('returnReportURL', dataX)
-    url2 <- substr(dataX, num[[1]][1]+16, num[[1]][2]-3)
-    data <- data.table::fread(url2)
-    data$aoi <- points
+  if(data$status_code == 200){
+    if(isTRUE(mat)){
+      num <- gregexpr('returnReportURL', dataX)
+      url2 <- substr(dataX, num[[1]][1]+16, num[[1]][2]-3)
+      outdata <- data.table::fread(url2)
+      outdata$aoi <- points
+    }else{
+      num <- gregexpr('returnTIFURL', dataX)
+      url2 <- substr(dataX, num[[1]][1]+13, num[[1]][2]-3)
+      outdata <- raster::raster(url2)
+    }
   }else{
-    num <- gregexpr('returnTIFURL', dataX)
-    url2 <- substr(dataX, num[[1]][1]+13, num[[1]][2]-3)
-    data <- raster::raster(url2)
+    if(grepl('ERROR 1: TIFFFetchDirectory', dataX) | grepl('Mismatch size of file 1 and file 2', dataX)){
+      outdata <- manualrotate(aoi = points, year1 = year1, year2 = year2, type = 'ps')
+      if(nrow(outdata) == 0) stop('The manually calculated crop cover change data has no observation. Something is wrong with the CDL data.')
+      outdata$aoi <- points
+      warning(paste0('Warning: CropScape cannot calculate the crop cover changes. So use manual calculations. Error message from CropScape is :', dataX))
+    }else{
+      stop(paste0('Error: The requested data might not exist in the CDL database. Error message from CropScape is :', dataX))
+    }
   }
-  return(data)
+  return(outdata)
 }
 
 GetCDLImageF <- function(fips, year, format = 'png', destfile = NULL, verbose = TRUE){
@@ -239,3 +308,6 @@ GetCDLStatB <- function(box, year, mat = F){
   colnames(data) <- c('Value', 'Counts', 'Category', 'Color', 'Acreage')
   return(data)
 }
+
+
+

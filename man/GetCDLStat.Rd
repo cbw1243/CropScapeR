@@ -4,29 +4,29 @@
 \alias{GetCDLStat}
 \title{Request for summary statistics of the CDL data}
 \usage{
-GetCDLStat(aoi = NULL, year = NULL, crs = NULL, type = "f")
+GetCDLStat(aoi = NULL, year = NULL, type = "f", crs = NULL)
 }
 \arguments{
 \item{aoi}{Area of interest. Could be a 5-digit FIPS code of a county, three coordinates that defines a triangle,
-or four corner points that defines a rectangle. The default coordinate system (used by CDL) is the Albers equal-area conic projection, or Albers projection. Users can provide
-coordinates from a different projection method, but user have to specify the coordinate system in the \code{crs} argument.
-For example, users can provide longitude/latitude coordinates here, while letting \code{crs} be '+init=epsg:4326'.}
+or four corner points that defines a rectangle (or a box), or a single coordinate. The default coordinate system used by CDL is a projected
+coordinate system called Albers projection (or Albers equal-area conic projection). Users could specify coordinates based on a
+different coordinate system (defined by the \code{crs} argument), including the geographic coordinate system such as latitude-longitude.}
 
-\item{year}{Year of data to request. Can be a numerical value or a character.}
+\item{year}{Crop year of data to request. Should be a 4-digit numerical value.}
 
-\item{crs}{Coordinate system, such as '+init=epsg:4326' for longitude/latitude.}
+\item{type}{Type of AOI. 'f' for county, 'ps' for triangle with multiple coordinates, 'b' for box with four corner points, 'p' for a single coordinate.}
 
-\item{type}{Type of aoi. 'f' for county, 'ps' for points, 'b' for box, 'p' for a single point.}
+\item{crs}{Coordinate system. NULL if use the default coordinate system (e.g., Albers projection); Use '+init=epsg:4326' for longitude/latitude.}
 }
 \value{
-The function returns a data frame that reports summary statistics of an area of interest in a given year.
+The function returns a data frame that reports summary statistics of the CDL data for an area of interest in a given year.
 }
 \description{
-A function that makes HTTP GET requests for the CDL raster data for an area of interests in a given crop year. 
-This function implements the GetCDLStat services provided by the CropScape~\url{https://nassgeodata.gmu.edu/CropScape}.
+A function that makes HTTP GET requests for the CDL raster data for an area of interests in a given crop year.
+This function implements the GetCDLStat services provided by the CropScape \url{https://nassgeodata.gmu.edu/CropScape}.
 }
 \examples{
-
+\dontrun{
 # Example 1. Retrieve data for the Champaign county in Illinois (FIPS = 17109) in 2018.
 data <- GetCDLStat(aoi = 17019, year = 2018, type = 'f')
 head(data, n = 5) # Show top 5 rows of retrieved data
@@ -38,5 +38,5 @@ head(data, n = 5)
 # Example 3. Retrieve data for a rectangle box defined by three corner points in 2018.
 data <- GetCDLStat(aoi = c(130783,2203171,153923,2217961), year = '2018', type = 'b')
 head(data, n = 5)
-
+}
 }

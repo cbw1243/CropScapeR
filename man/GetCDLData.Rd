@@ -8,28 +8,30 @@ GetCDLData(aoi = NULL, year = NULL, type = NULL, mat = FALSE, crs = NULL)
 }
 \arguments{
 \item{aoi}{Area of interest. Could be a 5-digit FIPS code of a county, three coordinates that defines a triangle,
-or four corner points that defines a rectangle, or a single coordinate. The default coordinate system (used by CDL) is the Albers equal-area conic projection, or Albers projection. Users can provide
-coordinates from a different projection method, but user have to specify the coordinate system in the \code{crs} argument.
-For example, users can provide longitude/latitude coordinates here, while letting \code{crs} be '+init=epsg:4326'.}
+or four corner points that defines a rectangle (or a box), or a single coordinate. The default coordinate system used by CDL is a projected
+coordinate system called Albers projection (or Albers equal-area conic projection). Users could specify coordinates based on a
+different coordinate system (defined by the \code{crs} argument), including the geographic coordinate system such as latitude-longitude.}
 
-\item{year}{Year of data to request. Can be a numerical value or a character.}
+\item{year}{Crop year of data to request. Should be a 4-digit numerical value.}
 
-\item{type}{Type of aoi. 'f' for county, 'ps' for points, 'b' for box, 'p' for a single point.}
+\item{type}{Type of AOI. 'f' for county, 'ps' for triangle with multiple coordinates, 'b' for box with four corner points, 'p' for a single coordinate.}
 
-\item{mat}{TRUE/FALSE. If TRUE, return a data table. If FALSE (default), return a raster file.}
+\item{mat}{TRUE/FALSE. If TRUE, return a data table. If FALSE (default), return a raster tif file.}
 
-\item{crs}{Coordinate system, such as '+init=epsg:4326' for longitude/latitude.}
+\item{crs}{Coordinate system. NULL if use the default coordinate system (e.g., Albers projection); Use '+init=epsg:4326' for longitude/latitude.}
 }
 \value{
-The function returns a raster file or a data table that saves the land use information. The file that matches the category codes with the category names
-are available at~\url{https://www.nass.usda.gov/Research_and_Science/Cropland/docs/cdl_codes_names.xlsx}. Or simply use data(linkdata)
+The function returns a raster TIF file or a data table that saves the cropland cover information. There are three columns in the returned data table. The first two are
+coordinates. The third column reports numerical codes of the land cover category. The CDL provides another EXCEL file that links numerical codes
+with the land cover names. One can download the EXCEL file from this link~\url{https://www.nass.usda.gov/Research_and_Science/Cropland/docs/cdl_codes_names.xlsx}.
+One can also use \code{data(linkdata)} to get the data saved in the EXCEL file. However, the linkdata saved in this package is not frequently updated.
 }
 \description{
 A function that makes HTTP GET requests for CDL raster data for any area of interests in a given crop year.
-This function implements the GetCDLStat service provided by the CropScape~\url{https://nassgeodata.gmu.edu/CropScape}.
+This function implements the GetCDLData service provided by the CropScape \url{https://nassgeodata.gmu.edu/CropScape}.
 }
 \examples{
-
+\dontrun{
 # Example 1. Retrieve data for the Champaign county in Illinois (FIPS = 17109) in 2018.
 data <- GetCDLData(aoi = 17019, year = 2018, type = 'f')
 raster::plot(data) # plot the data.
@@ -45,8 +47,8 @@ data
 data <- GetCDLData(aoi = c(175207,2219600,175207,2235525,213693,2219600), year = 2018, type = 'ps')
 raster::plot(data)
 
-# Example 4. Retrieve data for a rectangle box defined by three corner points in 2018.
+# Example 4. Retrieve data for a rectangle box defined by four corner points in 2018.
 data <- GetCDLData(aoi = c(130783,2203171,153923,2217961), year = '2018', type = 'b')
 raster::plot(data)
-
+}
 }
