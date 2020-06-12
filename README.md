@@ -1,8 +1,8 @@
 ## CropScapeR: Access Cropland Data Layer data via the CropScape web service
 
-The [Cropland Data Layer (CDL)](https://www.nass.usda.gov/Research_and_Science/Cropland/sarsfaqs2.php) is a data product produced by the National Agricultural Statistics Service of U.S. Department of Agriculture. It provides geo-referenced, high accuracy, 30 or 56 m resolution, crop-specific cropland land cover information for up to 48 contiguous states in the U.S. from 1997 to the present. This data product has been extensively used in the agriculture research [1]. 
+The [Cropland Data Layer (CDL)](https://www.nass.usda.gov/Research_and_Science/Cropland/sarsfaqs2.php) is a data product produced by the National Agricultural Statistics Service of U.S. Department of Agriculture. It provides geo-referenced, high accuracy, 30 or 56 meter resolution, crop-specific cropland land cover information for up to 48 contiguous states in the U.S. from 1997 to the present. This data product has been extensively used in agricultural research [1]. 
 
-[CropScape](https://nassgeodata.gmu.edu/CropScape/) is an interactive Web CDL exploring system, and it was developed to query, visualize, disseminate, and analyze CDL data geospatially through standard geospatial Web services in a publicly accessible online environment[2]. The development of the `CropScapeR` package is to allow R users to easily utilize the geospatial processing services provided by CropScape, so that users can effectively and efficiently access and analyze the CDL data. 
+[CropScape](https://nassgeodata.gmu.edu/CropScape/) is an interactive Web CDL exploring system, and it was developed to query, visualize, disseminate, and analyze CDL data geospatially through standard geospatial Web services in a publicly accessible online environment[2]. The development of the `CropScapeR` package is to allow R users to easily utilize the geospatial processing services provided by CropScape, so that they can effectively and efficiently access and analyze the CDL data. 
 
 ## Key functions     
 We implement four geospatial processing services provided by [CropScape](https://nassgeodata.gmu.edu/CropScape/) in `R`: 
