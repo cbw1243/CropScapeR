@@ -1,4 +1,4 @@
-## CropScapeR: Access Cropland Data Layer data via the CropScape web service
+## CropScapeR: Access Cropland Data Layer data via the CropScape Web Service
 
 The [Cropland Data Layer (CDL)](https://www.nass.usda.gov/Research_and_Science/Cropland/sarsfaqs2.php) is a data product produced by the National Agricultural Statistics Service of U.S. Department of Agriculture. It provides geo-referenced, high accuracy, 30 or 56 meter resolution, crop-specific cropland land cover information for up to 48 contiguous states in the U.S. from 1997 to the present. This data product has been extensively used in agricultural research [1]. 
 
