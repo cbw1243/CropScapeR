@@ -45,13 +45,13 @@
 #' data <- GetCDLComp(aoi = c(130783,2203171,153923,2217961), year1 = 2017, year2 = 2018, type = 'b')
 #' head(data, 5)
 #'}
-GetCDLComp <- function(aoi, year1, year2, type, mat = TRUE, crs = NULL){
+GetCDLComp <- function(aoi, year1, year2, type, mat = TRUE, crs = NULL, tol_time){
   targetCRS <- "+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
 
   if(!type %in% c('f', 'ps', 'b')) stop('The type value is wrong.')
 
   if(type == 'f'){
-    data <- GetCDLCompF(fips = aoi, year1 = year1, year2 = year2, mat = mat)
+    data <- GetCDLCompF(fips = aoi, year1 = year1, year2 = year2, mat = mat, tol_time = tol_time)
   }
 
   if(type == 'ps'){
@@ -62,7 +62,7 @@ GetCDLComp <- function(aoi, year1, year2, type, mat = TRUE, crs = NULL){
       newpoints <- sp::spTransform(oldpoints, targetCRS)
       aoi <- paste0(as.vector(t(newpoints@coords)), collapse = ',')
     }
-    data <- GetCDLCompPs(points = aoi, year1 = year1, year2 = year2, mat = mat)
+    data <- GetCDLCompPs(points = aoi, year1 = year1, year2 = year2, mat = mat, tol_time = tol_time)
   }
 
   if(type == 'b'){
@@ -73,7 +73,7 @@ GetCDLComp <- function(aoi, year1, year2, type, mat = TRUE, crs = NULL){
       newpoints <- sp::spTransform(oldpoints, targetCRS)
       aoi <- paste0(as.vector(t(newpoints@coords)), collapse = ',')
     }
-    data <- GetCDLCompB(box = aoi, year1 = year1, year2 = year2, mat = mat)
+    data <- GetCDLCompB(box = aoi, year1 = year1, year2 = year2, mat = mat, tol_time = tol_time)
   }
   return(data)
 }
