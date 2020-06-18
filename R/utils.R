@@ -89,7 +89,7 @@ manualrotate <- function(aoi, year1, year2, type = NULL, crs = NULL){
     dplyr::ungroup() %>%
     dplyr::select(-value.x, -value.y) %>%
     dplyr::rename(From = Crop.x, To = Crop.y) %>%
-    dplyr::mutate(Acreage = Count*conversionfactor)
+    dplyr::mutate(Acreage = Count*conversionfactor[1])
 
   return(pixelcounts)
 }
