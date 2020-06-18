@@ -73,42 +73,9 @@ GetCDLDataB <- function(box, year, mat = F, tol_time){
   return(outdata)
 }
 
-manualrotate <- function(aoi, year1, year2, type = NULL, crs = NULL, tol_time){
-  datat1 <- GetCDLData(aoi = aoi, year = year1, mat = FALSE, type = type, crs = crs, tol_time)
-  datat2 <- GetCDLData(aoi = aoi, year = year2, mat = FALSE, type = type, crs = crs, tol_time)
 
-  res1 <- raster::res(datat1)
-  res2 <- raster::res(datat2)
 
-  if(res1[1] > res2[1]){datat2 <- raster::resample(datat2, datat1, method = "ngb")}
-  if(res1[1] < res2[1]){datat1 <- raster::resample(datat1, datat2, method = "ngb")}
-
-  stopifnot(raster::res(datat1)[1] == raster::res(datat2)[1])
-  conversionfactor <- ifelse(raster::res(datat1) == 56, 0.774922, 0.222394)
-
-  datat1 <- raster::rasterToPoints(datat1)
-  datat2 <- raster::rasterToPoints(datat2)
-
-  datat1 <- data.table::as.data.table(datat1)
-  datat2 <- data.table::as.data.table(datat2)
-
-  pixelcounts <- merge(datat1, datat2, by = c('x', 'y')) %>%
-    as.data.frame() %>%
-    'colnames<-'(c('x', 'y', 'value.x', 'value.y')) %>%
-    dplyr::filter(value.x > 0, value.y > 0) %>%
-    dplyr::group_by(value.x, value.y) %>%
-    dplyr::summarise(Count = dplyr::n()) %>%
-    dplyr::left_join(., linkdata, by = c('value.x' = 'MasterCat')) %>%
-    dplyr::left_join(., linkdata, by = c('value.y' = 'MasterCat')) %>%
-    dplyr::ungroup() %>%
-    dplyr::select(-value.x, -value.y) %>%
-    dplyr::rename(From = Crop.x, To = Crop.y) %>%
-    dplyr::mutate(Acreage = Count*conversionfactor[1])
-
-  return(pixelcounts)
-}
-
-GetCDLCompF <- function(fips, year1, year2, mat = TRUE, tol_time){
+GetCDLCompF <- function(fips, year1, year2, mat = TRUE, tol_time, manual_try){
   url <- paste0('https://nassgeodata.gmu.edu/axis2/services/CDLService/GetCDLComp?year1=',
                 year1,'&year2=',year2,'&fips=', fips, '&format=csv')
 
@@ -121,6 +88,8 @@ GetCDLCompF <- function(fips, year1, year2, mat = TRUE, tol_time){
     dataX <- data$message
     data$status_code <- 999
   }
+
+  dataXtry <- grepl('ERROR 1: TIFFFetchDirectory', dataX) | grepl('Mismatch size of file 1 and file 2', dataX) | grepl('Timeout was reached', dataX)
 
   if(data$status_code == 200){
     if(isTRUE(mat)){
@@ -135,11 +104,13 @@ GetCDLCompF <- function(fips, year1, year2, mat = TRUE, tol_time){
     outdata <- raster::raster(url2)
     }
   }else{
-    if(grepl('ERROR 1: TIFFFetchDirectory', dataX) | grepl('Mismatch size of file 1 and file 2', dataX) | grepl('Timeout was reached', dataX)){
-      outdata <- manualrotate(aoi = fips, year1 = year1, year2 = year2, type = 'f', tol_time = tol_time)
-      if(nrow(outdata) == 0) stop('The manually calculated crop cover change data has no observation. Something is wrong with the CDL data.')
+    if(isTRUE(dataXtry) & isTRUE(manual_try)){
+      datat1 <- GetCDLData(aoi = fips, year = year1, mat = FALSE, type = 'f', tol_time)
+      datat2 <- GetCDLData(aoi = fips, year = year2, mat = FALSE, type = 'f', tol_time)
+      outdata <- manualrotate(datat1, datat2)
+      if(nrow(outdata) == 0) stop('Warning: CropScape cannot calculate for crop cover changes. Attempted manual calculation, but there is no match between the raster files.')
       outdata$aoi <- fips
-      warning(paste0('Warning: CropScape cannot calculate the crop cover changes. So use manual calculations. Error message from CropScape is :', dataX))
+      warning(paste0('Warning: CropScape cannot calculate for crop cover changes. The returned data are calculated manually using the manualrotate function.\n Error message from CropScape is :', dataX))
     }else{
       stop(paste0('Error: The requested data might not exist in the CDL database. Error message from CropScape is :', dataX))
     }
@@ -148,12 +119,21 @@ GetCDLCompF <- function(fips, year1, year2, mat = TRUE, tol_time){
 }
 
 
-GetCDLCompB <- function(box, year1, year2, mat = TRUE, tol_time){
+GetCDLCompB <- function(box, year1, year2, mat = TRUE, tol_time, manual_try){
   box <- paste0(box, collapse = ',')
   url <- paste0('https://nassgeodata.gmu.edu/axis2/services/CDLService/GetCDLComp?year1=',
                 year1,'&year2=',year2,'&bbox=', box, '&format=json')
-  data <- httr::GET(url, httr::timeout(tol_time))
-  dataX <- httr::content(data, 'text')
+  data <- tryCatch(httr::GET(url, httr::timeout(tol_time)),
+                   error = function(x) x)
+
+  if(class(data)[1] == 'response'){
+    dataX <- httr::content(data, 'text')
+  }else{
+    dataX <- data$message
+    data$status_code <- 999
+  }
+
+  dataXtry <- grepl('ERROR 1: TIFFFetchDirectory', dataX) | grepl('Mismatch size of file 1 and file 2', dataX) | grepl('Timeout was reached', dataX)
 
   if(data$status_code == 200){
     if(isTRUE(mat)){
@@ -164,19 +144,22 @@ GetCDLCompB <- function(box, year1, year2, mat = TRUE, tol_time){
       outdata <- lapply(outdataX, function(x) data.frame(matrix(unlist(x), nrow = 1), stringsAsFactors = F))
       outdata <- dplyr::bind_rows(outdata)[,-1]
       colnames(outdata) <- c('From', 'To', 'Count', 'Acreage')
+      outdata$Count <- as.numeric(outdata$Count)
+      outdata$Acreage <- as.numeric(outdata$Acreage)
       outdata$aoi <- box
-
     }else{
       num <- gregexpr('returnTIFURL', dataX)
       url2 <- substr(dataX, num[[1]][1]+13, num[[1]][2]-3)
       outdata <- raster::raster(url2)
-   }
+    }
   }else{
-    if(grepl('ERROR 1: TIFFFetchDirectory', dataX) | grepl('Mismatch size of file 1 and file 2', dataX)){
-      outdata <- manualrotate(aoi = box, year1 = year1, year2 = year2, type = 'b')
-      if(nrow(outdata) == 0) stop('The manually calculated crop cover change data has no observation. Something is wrong with the CDL data.')
+    if(isTRUE(dataXtry) & isTRUE(manual_try)){
+      datat1 <- GetCDLData(aoi = box, year = year1, mat = FALSE, type = 'b', tol_time)
+      datat2 <- GetCDLData(aoi = box, year = year2, mat = FALSE, type = 'b', tol_time)
+      outdata <- manualrotate(datat1, datat2)
+      if(nrow(outdata) == 0) stop('Warning: CropScape cannot calculate for crop cover changes. Attempted manual calculation, but there is no match between the raster files.')
       outdata$aoi <- box
-      warning(paste0('Warning: CropScape cannot calculate the crop cover changes. So use manual calculations. Error message from CropScape is :', dataX))
+      warning(paste0('Warning: CropScape cannot calculate for crop cover changes. The returned data are calculated manually using the manualrotate function.\n Error message from CropScape is :', dataX))
     }else{
       stop(paste0('Error: The requested data might not exist in the CDL database. Error message from CropScape is :', dataX))
     }
@@ -185,18 +168,28 @@ GetCDLCompB <- function(box, year1, year2, mat = TRUE, tol_time){
 }
 
 
-GetCDLCompPs <- function(points, year1, year2, mat = TRUE, tol_time){
+GetCDLCompPs <- function(points, year1, year2, mat = TRUE, tol_time, manual_try){
   points <- paste0(points, collapse = ',')
   url <- paste0('https://nassgeodata.gmu.edu/axis2/services/CDLService/GetCDLComp?year1=',
                 year1,'&year2=',year2,'&points=', points, '&format=csv')
-  data <- httr::GET(url, httr::timeout(tol_time))
-  dataX <- httr::content(data, 'text')
+  data <- tryCatch(httr::GET(url, httr::timeout(tol_time)),
+                   error = function(x) x)
+
+  if(class(data)[1] == 'response'){
+    dataX <- httr::content(data, 'text')
+  }else{
+    dataX <- data$message
+    data$status_code <- 999
+  }
+
+  dataXtry <- grepl('ERROR 1: TIFFFetchDirectory', dataX) | grepl('Mismatch size of file 1 and file 2', dataX) | grepl('Timeout was reached', dataX)
 
   if(data$status_code == 200){
     if(isTRUE(mat)){
       num <- gregexpr('returnReportURL', dataX)
       url2 <- substr(dataX, num[[1]][1]+16, num[[1]][2]-3)
       outdata <- data.table::fread(url2)
+      if(nrow(outdata) == 0) stop(paste0('Error: The CDL TIF files are likely corrupted.'))
       outdata$aoi <- points
     }else{
       num <- gregexpr('returnTIFURL', dataX)
@@ -204,11 +197,13 @@ GetCDLCompPs <- function(points, year1, year2, mat = TRUE, tol_time){
       outdata <- raster::raster(url2)
     }
   }else{
-    if(grepl('ERROR 1: TIFFFetchDirectory', dataX) | grepl('Mismatch size of file 1 and file 2', dataX)){
-      outdata <- manualrotate(aoi = points, year1 = year1, year2 = year2, type = 'ps')
-      if(nrow(outdata) == 0) stop('The manually calculated crop cover change data has no observation. Something is wrong with the CDL data.')
+    if(isTRUE(dataXtry) & isTRUE(manual_try)){
+      datat1 <- GetCDLData(aoi = points, year = year1, mat = FALSE, type = 'ps', tol_time)
+      datat2 <- GetCDLData(aoi = points, year = year2, mat = FALSE, type = 'ps', tol_time)
+      outdata <- manualrotate(datat1, datat2)
+      if(nrow(outdata) == 0) stop('Warning: CropScape cannot calculate for crop cover changes. Attempted manual calculation, but there is no match between the raster files.')
       outdata$aoi <- points
-      warning(paste0('Warning: CropScape cannot calculate the crop cover changes. So use manual calculations. Error message from CropScape is :', dataX))
+      warning(paste0('Warning: CropScape cannot calculate for crop cover changes. The returned data are calculated manually using the manualrotate function.\n Error message from CropScape is :', dataX))
     }else{
       stop(paste0('Error: The requested data might not exist in the CDL database. Error message from CropScape is :', dataX))
     }
