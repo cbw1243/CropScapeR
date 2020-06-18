@@ -11,6 +11,7 @@
 #' @param type Type of AOI. 'f' for county, 'ps' for triangle with multiple coordinates, 'b' for box with four corner points, 'p' for a single coordinate.
 #' @param mat TRUE/FALSE. If TRUE, return a data table. If FALSE (default), return a raster tif file.
 #' @param crs Coordinate system. NULL if use the default coordinate system (e.g., Albers projection); Use '+init=epsg:4326' for longitude/latitude.
+#' @param tol_time Number of seconds to wait for a response until giving up. Default is 20 seconds.
 #'
 #' @return
 #' The function returns a raster TIF file or a data table that saves the cropland cover information. There are three columns in the returned data table. The first two are

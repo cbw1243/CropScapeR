@@ -4,7 +4,14 @@
 \alias{GetCDLData}
 \title{Request for the CDL raster data}
 \usage{
-GetCDLData(aoi = NULL, year = NULL, type = NULL, mat = FALSE, crs = NULL)
+GetCDLData(
+  aoi = NULL,
+  year = NULL,
+  type = NULL,
+  mat = FALSE,
+  crs = NULL,
+  tol_time = 20
+)
 }
 \arguments{
 \item{aoi}{Area of interest. Could be a 5-digit FIPS code of a county, three coordinates that defines a triangle,
@@ -19,6 +26,8 @@ different coordinate system (defined by the \code{crs} argument), including the 
 \item{mat}{TRUE/FALSE. If TRUE, return a data table. If FALSE (default), return a raster tif file.}
 
 \item{crs}{Coordinate system. NULL if use the default coordinate system (e.g., Albers projection); Use '+init=epsg:4326' for longitude/latitude.}
+
+\item{tol_time}{Number of seconds to wait for a response until giving up. Default is 20 seconds.}
 }
 \value{
 The function returns a raster TIF file or a data table that saves the cropland cover information. There are three columns in the returned data table. The first two are

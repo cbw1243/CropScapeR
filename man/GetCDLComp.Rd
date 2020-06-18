@@ -4,7 +4,7 @@
 \alias{GetCDLComp}
 \title{Request for data on land cover changes from the CDL}
 \usage{
-GetCDLComp(aoi, year1, year2, type, mat = TRUE, crs = NULL)
+GetCDLComp(aoi, year1, year2, type, mat = TRUE, crs = NULL, tol_time = 20)
 }
 \arguments{
 \item{aoi}{Area of interest. Could be a 5-digit FIPS code of a county, three coordinates that defines a triangle,
@@ -21,6 +21,8 @@ different coordinate system (defined by the \code{crs} argument), including the 
 \item{mat}{TRUE/FALSE. If TRUE (default), return a data table. If FALSE, return a raster file;}
 
 \item{crs}{Coordinate system. NULL if use the default coordinate system (e.g., Albers projection); Use '+init=epsg:4326' for longitude/latitude.}
+
+\item{tol_time}{Number of seconds to wait for a response until giving up. Default is 20 seconds.}
 }
 \value{
 The function returns a data table or a raster file.

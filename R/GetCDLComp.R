@@ -24,6 +24,7 @@
 #' @param type Type of AOI. 'f' for county, 'ps' for triangle with multiple coordinates, 'b' for box with four corner points, 'p' for a single coordinate.
 #' @param mat TRUE/FALSE. If TRUE (default), return a data table. If FALSE, return a raster file;
 #' @param crs Coordinate system. NULL if use the default coordinate system (e.g., Albers projection); Use '+init=epsg:4326' for longitude/latitude.
+#' @param tol_time Number of seconds to wait for a response until giving up. Default is 20 seconds.
 #'
 #' @return
 #' The function returns a data table or a raster file.
@@ -45,7 +46,7 @@
 #' data <- GetCDLComp(aoi = c(130783,2203171,153923,2217961), year1 = 2017, year2 = 2018, type = 'b')
 #' head(data, 5)
 #'}
-GetCDLComp <- function(aoi, year1, year2, type, mat = TRUE, crs = NULL, tol_time){
+GetCDLComp <- function(aoi, year1, year2, type, mat = TRUE, crs = NULL, tol_time = 20){
   targetCRS <- "+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
 
   if(!type %in% c('f', 'ps', 'b')) stop('The type value is wrong.')
