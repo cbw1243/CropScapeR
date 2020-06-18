@@ -13,6 +13,13 @@
 #'
 #' @export
 #'
+#' @examples
+#'\dontrun{
+#' # Calculate land cover changes for the Champaign county (FIPS = 17109) in 2017-2018.
+#' datat1 <- GetCDLData(aoi = '17019', year = 2017, type = 'f')
+#' datat2 <- GetCDLData(aoi = '17019', year = 2018, type = 'f')
+#' change <- manualrotate(datat1, datat2)
+#'}
 #'
 manualrotate <- function(datat1, datat2){
   if(class(datat1) != c('RasterLayer')) stop('datat1 must be a raster file.')

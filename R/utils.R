@@ -108,11 +108,11 @@ GetCDLCompF <- function(fips, year1, year2, mat = TRUE, tol_time, manual_try){
       datat1 <- GetCDLData(aoi = fips, year = year1, mat = FALSE, type = 'f', tol_time)
       datat2 <- GetCDLData(aoi = fips, year = year2, mat = FALSE, type = 'f', tol_time)
       outdata <- manualrotate(datat1, datat2)
-      if(nrow(outdata) == 0) stop('Warning: CropScape cannot calculate for crop cover changes. Attempted manual calculation, but there is no match between the raster files.')
+      if(nrow(outdata) == 0) stop('Warning: CropScape cannot calculate for crop cover changes. Attempted manual calculation, but there is no match between the raster files.\n')
       outdata$aoi <- fips
       warning(paste0('Warning: CropScape cannot calculate for crop cover changes. The returned data are calculated manually using the manualrotate function.\n Error message from CropScape is :', dataX))
     }else{
-      stop(paste0('Error: The requested data might not exist in the CDL database. Error message from CropScape is :', dataX))
+      stop(paste0('Error: The requested data might not exist in the CDL database. \nError message from CropScape is :', dataX))
     }
   }
   return(outdata)
@@ -157,11 +157,11 @@ GetCDLCompB <- function(box, year1, year2, mat = TRUE, tol_time, manual_try){
       datat1 <- GetCDLData(aoi = box, year = year1, mat = FALSE, type = 'b', tol_time)
       datat2 <- GetCDLData(aoi = box, year = year2, mat = FALSE, type = 'b', tol_time)
       outdata <- manualrotate(datat1, datat2)
-      if(nrow(outdata) == 0) stop('Warning: CropScape cannot calculate for crop cover changes. Attempted manual calculation, but there is no match between the raster files.')
+      if(nrow(outdata) == 0) stop('Warning: CropScape cannot calculate for crop cover changes. Attempted manual calculation, but there is no match between the raster files.\n')
       outdata$aoi <- box
       warning(paste0('Warning: CropScape cannot calculate for crop cover changes. The returned data are calculated manually using the manualrotate function.\n Error message from CropScape is :', dataX))
     }else{
-      stop(paste0('Error: The requested data might not exist in the CDL database. Error message from CropScape is :', dataX))
+      stop(paste0('Error: No data is found in the CDL database with the request. \n Error message from CropScape is :', dataX))
     }
   }
   return(outdata)
@@ -201,11 +201,11 @@ GetCDLCompPs <- function(points, year1, year2, mat = TRUE, tol_time, manual_try)
       datat1 <- GetCDLData(aoi = points, year = year1, mat = FALSE, type = 'ps', tol_time)
       datat2 <- GetCDLData(aoi = points, year = year2, mat = FALSE, type = 'ps', tol_time)
       outdata <- manualrotate(datat1, datat2)
-      if(nrow(outdata) == 0) stop('Warning: CropScape cannot calculate for crop cover changes. Attempted manual calculation, but there is no match between the raster files.')
+      if(nrow(outdata) == 0) stop('Warning: CropScape cannot calculate for crop cover changes. Attempted manual calculation, but there is no match between the raster files.\n')
       outdata$aoi <- points
       warning(paste0('Warning: CropScape cannot calculate for crop cover changes. The returned data are calculated manually using the manualrotate function.\n Error message from CropScape is :', dataX))
     }else{
-      stop(paste0('Error: The requested data might not exist in the CDL database. Error message from CropScape is :', dataX))
+      stop(paste0('Error: The requested data might not exist in the CDL database. \nError message from CropScape is :', dataX))
     }
   }
   return(outdata)

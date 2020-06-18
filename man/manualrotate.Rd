@@ -19,3 +19,12 @@ The \code{manualrotate} function analyzes land use changes based on two raster f
 converted to data tables. At step 2, the two data tables are merged together based on their coordinates. The coordinates without macthes are discarded during the
 merging process. At step 3, the data are aggregated by counting the number of pixels for each land change group.
 }
+\examples{
+\dontrun{
+# Calculate land cover changes for the Champaign county (FIPS = 17109) in 2017-2018.
+datat1 <- GetCDLData(aoi = '17019', year = 2017, type = 'f')
+datat2 <- GetCDLData(aoi = '17019', year = 2018, type = 'f')
+change <- manualrotate(datat1, datat2)
+}
+
+}
