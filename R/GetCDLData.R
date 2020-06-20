@@ -22,7 +22,7 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Example 1. Retrieve data for the Champaign county in Illinois (FIPS = 17109) in 2018.
 #' data <- GetCDLData(aoi = 17019, year = 2018, type = 'f')
 #' raster::plot(data) # plot the data.

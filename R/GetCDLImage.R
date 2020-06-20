@@ -51,4 +51,4 @@ GetCDLImage <- function(aoi = NULL, year = NULL, type = NULL, format = 'png', cr
   }
 }
 
-?download.file()
+

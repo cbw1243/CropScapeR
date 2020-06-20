@@ -46,7 +46,7 @@
 #' @export
 #'
 #' @examples
-#'\dontrun{
+#'\donttest{
 #' # Example 1. Retrieve data for the Champaign county in Illinois (FIPS = 17109) in 2017-2018.
 #' data <- GetCDLComp(aoi = '17019', year1 = 2017, year2 = 2018, type = 'f')
 #' head(data, 5)
