@@ -26,7 +26,7 @@ A function that makes HTTP GET requests for the CDL raster data for an area of i
 This function implements the GetCDLStat services provided by the CropScape \url{https://nassgeodata.gmu.edu/CropScape}.
 }
 \examples{
-\dontrun{
+\donttest{
 # Example 1. Retrieve data for the Champaign county in Illinois (FIPS = 17109) in 2018.
 data <- GetCDLStat(aoi = 17019, year = 2018, type = 'f')
 head(data, n = 5) # Show top 5 rows of retrieved data
