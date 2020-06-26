@@ -20,7 +20,7 @@ converted to data tables. At step 2, the two data tables are merged together bas
 merging process. At step 3, the data are aggregated by counting the number of pixels for each land change group.
 }
 \examples{
-\dontrun{
+\donttest{
 # Calculate land cover changes for the Champaign county (FIPS = 17109) in 2017-2018.
 datat1 <- GetCDLData(aoi = '17019', year = 2017, type = 'f')
 datat2 <- GetCDLData(aoi = '17019', year = 2018, type = 'f')

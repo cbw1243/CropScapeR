@@ -3,7 +3,7 @@
 \docType{data}
 \name{linkdata}
 \alias{linkdata}
-\title{A dataset on adoption of conservation agriculture in Zambia}
+\title{A dataset documenting the correspondence between crop names and crop names for CDL}
 \format{An object of class \code{data.table} (inherits from \code{data.frame}) with 256 rows and 2 columns.}
 \source{
 \url{https://www.nass.usda.gov/Research_and_Science/Cropland/docs/cdl_codes_names.xlsx}
@@ -12,6 +12,6 @@
 data(linkdata)
 }
 \description{
-A dataset on adoption of conservation agriculture in Zambia
+A dataset documenting the correspondence between crop names and crop names for CDL
 }
 \keyword{datasets}

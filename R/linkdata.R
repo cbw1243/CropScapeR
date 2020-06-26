@@ -1,4 +1,4 @@
-#' A dataset on adoption of conservation agriculture in Zambia
+#' A dataset documenting the correspondence between crop names and crop names for CDL
 #'
 #' @docType data
 #'

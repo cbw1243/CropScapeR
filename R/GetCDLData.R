@@ -16,7 +16,7 @@
 #' @return
 #' The function returns a raster TIF file or a data table that saves the cropland cover information. There are three columns in the returned data table. The first two are
 #' coordinates. The third column reports numerical codes of the land cover category. The CDL provides another EXCEL file that links numerical codes
-#' with the land cover names. One can download the EXCEL file from this link~\url{https://www.nass.usda.gov/Research_and_Science/Cropland/docs/cdl_codes_names.xlsx}.
+#' with the land cover names. One can download the EXCEL file from this link \url{https://www.nass.usda.gov/Research_and_Science/Cropland/docs/cdl_codes_names.xlsx}.
 #' One can also use \code{data(linkdata)} to get the data saved in the EXCEL file. However, the linkdata saved in this package is not frequently updated.
 #'
 #' @export
