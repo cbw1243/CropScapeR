@@ -32,7 +32,7 @@
 #' head(data, n = 5)
 #'}
 
-GetCDLStat <- function(aoi = NULL, year = NULL, type = 'f', crs = NULL, tol_time = 20){
+GetCDLStat <- function(aoi = NULL, year = NULL, type = NULL, crs = NULL, tol_time = 20){
   targetCRS <- "+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
 
   if(!type %in% c('f', 'ps', 'b', 'p')) stop('The type value is wrong.')

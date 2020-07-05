@@ -18,6 +18,9 @@
 #' For instance, if latitude/longitude is used, users should specify the AOI as
 #' (Lower longitude, Lower latitude, Higher longitude, Higher latitude). See examples.
 #'
+#' The \code{tol_time} argument specifies the time limit for making the HTTP GET request. This is useful particularly when the CropScape server has an issue with processing the data.
+#' CropScape could sometime take minutes before returning an error saying that the requested data are not available. By setting a time limit, the \code{GetCDLComp} function would stop
+#' making the data requests when the time limit is reached. The default time limit is 20 seconds.
 #'
 #' @param aoi Area of interest. Could be a 5-digit FIPS code of a county, three coordinates that defines a triangle area,
 #' four corner points that defines a rectangle (or a box) area, or a single coordinate. See details.

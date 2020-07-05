@@ -4,7 +4,7 @@
 \alias{GetCDLStat}
 \title{Request for summary statistics of the CDL data}
 \usage{
-GetCDLStat(aoi = NULL, year = NULL, type = "f", crs = NULL, tol_time = 20)
+GetCDLStat(aoi = NULL, year = NULL, type = NULL, crs = NULL, tol_time = 20)
 }
 \arguments{
 \item{aoi}{Area of interest. Could be a 5-digit FIPS code of a county, three coordinates that defines a triangle,
