@@ -32,8 +32,8 @@
 #' or four corner points that defines a rectangle (or a box), or a single coordinate. The default coordinate system used by CDL is a projected
 #' coordinate system called Albers projection (or Albers equal-area conic projection). Users could specify coordinates based on a
 #' different coordinate system (defined by the \code{crs} argument), including the geographic coordinate system such as latitude-longitude.
-#' @param year1 Crop year. Should be a 4-digit numerical value.
-#' @param year2 Crop year. Should be a 4-digit numerical value.
+#' @param year1 Year 1. Should be a 4-digit numerical value.
+#' @param year2 Year 2. Should be a 4-digit numerical value.
 #' @param type Type of AOI. 'f' for county, 'ps' for triangle with multiple coordinates, 'b' for box with four corner points.
 #' @param mat TRUE/FALSE. If TRUE (default), return a data table. If FALSE, return a raster file;
 #' @param crs Coordinate system. NULL if use the default coordinate system (e.g., Albers projection); Use '+init=epsg:4326' for longitude/latitude.

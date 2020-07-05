@@ -21,9 +21,9 @@ or four corner points that defines a rectangle (or a box), or a single coordinat
 coordinate system called Albers projection (or Albers equal-area conic projection). Users could specify coordinates based on a
 different coordinate system (defined by the \code{crs} argument), including the geographic coordinate system such as latitude-longitude.}
 
-\item{year1}{Crop year. Should be a 4-digit numerical value.}
+\item{year1}{Year 1. Should be a 4-digit numerical value.}
 
-\item{year2}{Crop year. Should be a 4-digit numerical value.}
+\item{year2}{Year 2. Should be a 4-digit numerical value.}
 
 \item{type}{Type of AOI. 'f' for county, 'ps' for triangle with multiple coordinates, 'b' for box with four corner points.}
 

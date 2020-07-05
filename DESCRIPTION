@@ -1,7 +1,7 @@
 Package: CropScapeR
 Type: Package
 Title: Access Cropland Data Layer Data via the 'CropScape' Web Service 
-Version: 1.0.0
+Version: 1.0.1
 Authors@R: c(person(given = "Bowen", family = "Chen", role = c("aut", "cre"), email = "bwchen0719@gmail.com", comment = c(ORCID = "0000-0003-0370-2756")),
              person(given = "Benjamin", family = "Gramig", role = "ctb"))
 Description: Interface to easily access Cropland Data Layer (CDL) data for any area of interest via the 'CropScape' <https://nassgeodata.gmu.edu/CropScape/> web service.  

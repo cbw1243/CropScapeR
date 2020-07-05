@@ -11,7 +11,8 @@ GetCDLImage(
   format = "png",
   crs = NULL,
   destfile = NULL,
-  verbose = TRUE
+  verbose = TRUE,
+  tol_time = 20
 )
 }
 \arguments{
@@ -20,7 +21,7 @@ or four corner points that defines a rectangle (or a box), or a single coordinat
 coordinate system called Albers projection (or Albers equal-area conic projection). Users could specify coordinates based on a
 different coordinate system (defined by the \code{crs} argument), including the geographic coordinate system such as latitude-longitude.}
 
-\item{year}{Crop year of data to request. Should be a 4-digit numerical value.}
+\item{year}{Year of data. Should be a 4-digit numerical value.}
 
 \item{type}{Type of AOI. 'f' for county, 'ps' for triangle with multiple coordinates, 'b' for box with four corner points, 'p' for a single coordinate.}
 
@@ -28,9 +29,12 @@ different coordinate system (defined by the \code{crs} argument), including the 
 
 \item{crs}{Coordinate system. NULL if use the default coordinate system (e.g., Albers projection); Use '+init=epsg:4326' for longitude/latitude.}
 
-\item{destfile}{A character string (or vector, see \code{url}) with the name where the downloaded file is saved. If not specified, the function will creater a temporary folder to save the image file.}
+\item{destfile}{A character string that specifies the directory to save the downloaded image file (e.g., 'C:/image.png'). Note that
+the name of the image should be specified as well. If not specified, the function will creater a temporary folder to save the image file.}
 
 \item{verbose}{TRUE/FALSE. Display the directory saving the file or not.}
+
+\item{tol_time}{Number of seconds to wait for a response until giving up. Default is 20 seconds.}
 }
 \value{
 The function downloads an image file in png or kml format to users' computer. This function is different to \code{GetCDLData} that returns a raster TIF file.

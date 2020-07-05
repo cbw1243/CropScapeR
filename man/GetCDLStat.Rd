@@ -4,7 +4,7 @@
 \alias{GetCDLStat}
 \title{Request for summary statistics of the CDL data}
 \usage{
-GetCDLStat(aoi = NULL, year = NULL, type = "f", crs = NULL)
+GetCDLStat(aoi = NULL, year = NULL, type = "f", crs = NULL, tol_time = 20)
 }
 \arguments{
 \item{aoi}{Area of interest. Could be a 5-digit FIPS code of a county, three coordinates that defines a triangle,
@@ -12,11 +12,13 @@ or four corner points that defines a rectangle (or a box), or a single coordinat
 coordinate system called Albers projection (or Albers equal-area conic projection). Users could specify coordinates based on a
 different coordinate system (defined by the \code{crs} argument), including the geographic coordinate system such as latitude-longitude.}
 
-\item{year}{Crop year of data to request. Should be a 4-digit numerical value.}
+\item{year}{Year of data to request. Should be a 4-digit numerical value.}
 
 \item{type}{Type of AOI. 'f' for county, 'ps' for triangle with multiple coordinates, 'b' for box with four corner points, 'p' for a single coordinate.}
 
 \item{crs}{Coordinate system. NULL if use the default coordinate system (e.g., Albers projection); Use '+init=epsg:4326' for longitude/latitude.}
+
+\item{tol_time}{Number of seconds to wait for a response until giving up. Default is 20 seconds.}
 }
 \value{
 The function returns a data frame that reports summary statistics of the CDL data for an area of interest in a given year.
