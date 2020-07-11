@@ -1,4 +1,6 @@
-![](http://cranlogs.r-pkg.org/badges/grand-total/CropScapeR?color=brightgreen) ![CropScapeR](https://img.shields.io/CropScapeR/v/angular-clipboard-auto.svg)
+![](http://cranlogs.r-pkg.org/badges/grand-total/CropScapeR?color=brightgreen) 
+[![Build Status](https://dev.azure.com/pandiyancool/Angular%20Clipboard%20auto/_apis/build/status/Angular%20Clipboard%20auto-CI?branchName=master)](https://dev.azure.com/pandiyancool/Angular%20Clipboard%20auto/_build/latest?definitionId=4&branchName=master) ![npm](https://img.shields.io/npm/dt/angular-clipboard-auto.svg) ![npm](https://img.shields.io/npm/v/angular-clipboard-auto.svg)
+
 
 ## CropScapeR: Access Cropland Data Layer data via the CropScape Web Service
 
