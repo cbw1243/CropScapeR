@@ -1,4 +1,4 @@
-![](http://cranlogs.r-pkg.org/badges/grand-total/CropScapeR?color=brightgreen) ![CropScapeR](https://img.shields.io/CropScapeR/dt/angular-clipboard-auto.svg) ![npm](https://img.shields.io/npm/v/angular-clipboard-auto.svg)
+![](http://cranlogs.r-pkg.org/badges/grand-total/CropScapeR?color=brightgreen) ![CropScapeR](https://img.shields.io/github/issues/cbw1243/CropScapeR) ![npm](https://img.shields.io/npm/v/angular-clipboard-auto.svg)
 
 
 ## CropScapeR: Access Cropland Data Layer data via the CropScape Web Service
