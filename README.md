@@ -1,4 +1,4 @@
-![](http://cranlogs.r-pkg.org/badges/grand-total/CropScapeR?color=brightgreen)
+![](http://cranlogs.r-pkg.org/badges/grand-total/CropScapeR?color=brightgreen) ![CropScapeR](https://img.shields.io/CropScapeR/v/angular-clipboard-auto.svg)
 
 ## CropScapeR: Access Cropland Data Layer data via the CropScape Web Service
 
@@ -23,6 +23,7 @@ The `GetCDLComp` service performs cropland change analysis by comparing the pixe
 Examples using the `R` functions are provided in the function help files. CropScape provides several other geoprocessing services, and they would be implemented in R in future developments. 
 
 ## Package installation 
+The `CropScapeR` package is accepted by `CRAN`, it can be directly installed in `R`
 ```
 install.packages("CropScapeR")
 ```
