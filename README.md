@@ -1,4 +1,4 @@
-![](http://cranlogs.r-pkg.org/badges/grand-total/CropScapeR)
+![](http://cranlogs.r-pkg.org/badges/grand-total/CropScapeR?color=brightgreen)
 
 ## CropScapeR: Access Cropland Data Layer data via the CropScape Web Service
 
