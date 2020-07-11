@@ -1,4 +1,4 @@
-![](http://cranlogs.r-pkg.org/badges/grand-total/CropScapeR?color=brightgreen) ![CropScapeR](https://img.shields.io/github/issues/cbw1243/CropScapeR) ![CRAN/METACRAN](https://img.shields.io/cran/v/CropScapeR)
+![CRAN/METACRAN](https://img.shields.io/cran/v/CropScapeR?color=brightgreen)![](http://cranlogs.r-pkg.org/badges/grand-total/CropScapeR?color=brightgreen) 
 
 
 ## CropScapeR: Access Cropland Data Layer data via the CropScape Web Service
