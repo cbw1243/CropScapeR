@@ -22,24 +22,22 @@ The `GetCDLComp` service performs cropland change analysis by comparing the pixe
 
 Examples using the `R` functions are provided in the function help files. CropScape provides several other geoprocessing services, and they would be implemented in R in future developments. 
 
-## Package installation   
-To install the package, run the following codes in `R`:
+## Package installation 
+```
+install.packages("CropScapeR")
+```
+To install development version of the package, run the following codes in `R`:
 ```
 install.packages("devtools") # Run this if the devtools package is not installed.     
 devtools::install_github("cbw1243/CropScapeR")  
 ```
 Note the `CropScapeR` package depends on the `rgdal` and `sp` packages to process the raster files. 
 
-## Development   
-The package is initially released on March 26, 2020 at GitHub to collect users feedbacks. The package will be submitted to CRAN. If you have any suggestion, please contact the author.
-
-Note that the package could be updated at any time at the current stage. To enjoy the latest version, install again before using it.
-
 ## Acknowledgement      
 The development of this package was supported by USDA-NRCS Agreement No. NR193A750016C001 through the Cooperative Ecosystem Studies Units network. Any opinions, findings, conclusions, or recommendations expressed are those of the author(s) and do not necessarily reflect the view of the U.S. Department of Agriculture. 
 
 ## Contact   
-[Bowen Chen](https://sites.google.com/view/bwchen), PhD (bwchen@illinois.edu)
+[Bowen Chen](https://www.bwchen.com), PhD (bwchen@illinois.edu)
 
 ## Reference   
 
