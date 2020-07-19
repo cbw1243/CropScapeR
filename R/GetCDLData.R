@@ -1,7 +1,7 @@
 #' Request for the CDL raster data
 #'
-#' A function that makes HTTP GET requests for CDL raster data for any Area of Interests (AOI) in a given year.
-#' This function implements the GetCDLData service provided by the CropScape \url{https://nassgeodata.gmu.edu/CropScape}.
+#' A function that makes HTTP GET requests for CDL raster data for any Area of Interests (AOI) in a given year. The raster data are read into R using the \code{raster}
+#' function in the \code{raster} package. This function implements the GetCDLData service provided by the CropScape \url{https://nassgeodata.gmu.edu/CropScape}.
 #'
 #' An AOI can be a county defined by a 5-digit FIPS code, a triangle area (defined by three coordinates),
 #' a rectangle/box (defined by four corner points), or a single point (defined by a coordinate). When using coordinates,
@@ -22,6 +22,12 @@
 #' CropScape could sometime take minutes before returning an error saying that the requested data are not available. By setting a time limit, the \code{GetCDLComp} function would stop
 #' making the data requests when the time limit is reached. The default time limit is 20 seconds.
 #'
+#' Users can choose to save the raster TIF file in their computers when requesting the CDL data, simply by specifying a directory name
+#' in \code{save_path}. In this case, \code{GetCDLData} will first save the data and then read the saved data into \code{R} using the \code{raster} function
+#' from the \code{raster} package. For example, when letting \code{save_path} be 'C:/test.tif', the raster TIF file will be saved at the 'C' disk in the name of
+#' 'test.tif'. If \code{save_path} is NULL (default), the raster TIF file will not be saved but directly read into the \code{R} environment through the \code{raster} function.
+#'
+#'
 #' @param aoi Area of interest. Could be a 5-digit FIPS code of a county, three coordinates that defines a triangle area,
 #' four corner points that defines a rectangle (or a box) area, or a single coordinate. See details.
 #' @param year Year of data. Should be a 4-digit numerical value.
@@ -29,6 +35,8 @@
 #' @param mat TRUE/FALSE. If TRUE, return a data table. If FALSE (default), return a raster tif file.
 #' @param crs Coordinate system. NULL if use the default coordinate system (i.e., Albers projection); Use '+init=epsg:4326' for longitude/latitude.
 #' @param tol_time Number of seconds to wait for a response until giving up. Default is 20 seconds.
+#' @param save_path Path (including the file name with the suffix: '.tif') to save the TIF file.
+#' If a path is provided, the TIF file will be saved in the computer in the specified directory. Default: NULL
 #'
 #' @return
 #' The function returns a raster TIF file or a data table that saves the cropland cover information. There are three columns in the returned data table. The first two are
@@ -43,6 +51,11 @@
 #' \donttest{
 #' # Example. Retrieve data for the Champaign county in Illinois (FIPS = 17109) in 2018.
 #' data <- GetCDLData(aoi = 17019, year = 2018, type = 'f')
+#' raster::plot(data) # plot the data.
+#'
+#' # Same request but also save the raster data as a TIF file.
+#' # Note: A temporary file is created to save the data using the tempfile function
+#' data <- GetCDLData(aoi = 17019, year = 2018, type = 'f', save_path = tempfile(fileext = 'tif'))
 #' raster::plot(data) # plot the data.
 #'
 #' # Example. Retrieve data for a single point by long/lat in 2018.
@@ -65,13 +78,17 @@
 #' crs = '+init=epsg:4326')
 #' raster::plot(data)
 #'}
-GetCDLData <- function(aoi = NULL, year = NULL, type = NULL, mat = FALSE, crs = NULL, tol_time = 20){
+#'
+GetCDLData <- function(aoi = NULL, year = NULL, type = NULL, mat = FALSE, crs = NULL, tol_time = 20, save_path = NULL){
   targetCRS <- "+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
+  if(!is.null(save_path)){
+    if(substr(save_path, nchar(save_path)-3, nchar(save_path)) != '.tif') stop('Suffix of save_path must be tif.')
+  }
 
   if(!type %in% c('f', 'ps', 'b', 'p')) stop('The type value is wrong.')
 
   if(type == 'f'){
-    data <- GetCDLDataF(fips = aoi, year = year, tol_time = tol_time)
+    data <- GetCDLDataF(fips = aoi, year = year, tol_time = tol_time, save_path = save_path)
   }
 
   if(type == 'ps'){
@@ -82,7 +99,7 @@ GetCDLData <- function(aoi = NULL, year = NULL, type = NULL, mat = FALSE, crs = 
       newpoints <- sp::spTransform(oldpoints, targetCRS)
       aoi <- paste0(as.vector(t(newpoints@coords)), collapse = ',')
     }
-    data <- GetCDLDataPs(points = aoi, year = year, tol_time = tol_time)
+    data <- GetCDLDataPs(points = aoi, year = year, tol_time = tol_time, save_path = save_path)
   }
 
   if(type == 'b'){
@@ -93,7 +110,7 @@ GetCDLData <- function(aoi = NULL, year = NULL, type = NULL, mat = FALSE, crs = 
       newpoints <- sp::spTransform(oldpoints, targetCRS)
       aoi <- paste0(as.vector(t(newpoints@coords)), collapse = ',')
     }
-    data <- GetCDLDataB(box = aoi, year = year, tol_time = tol_time)
+    data <- GetCDLDataB(box = aoi, year = year, tol_time = tol_time, save_path = save_path)
   }
 
   if(type == 'p'){

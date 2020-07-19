@@ -1,16 +1,19 @@
-GetCDLDataF <- function(fips, year, tol_time){
-  url <- paste0('https://nassgeodata.gmu.edu/axis2/services/CDLService/GetCDLFile?year=',
-                year, '&fips=', fips)
+GetCDLDataF <- function(fips, year, tol_time, save_path){
+  url <- paste0('https://nassgeodata.gmu.edu/axis2/services/CDLService/GetCDLFile?year=', year, '&fips=', fips)
+  data <- tryCatch(httr::GET(url, httr::timeout(tol_time)), error = function(x) x)
 
-  data <- tryCatch(httr::GET(url, httr::timeout(tol_time)),
-                   error = function(x) x)
-  if(class(data)[1] != 'response') stop('Request time limit is reached. Try to increase tol_time, or try later.\n')
-
+  if(class(data)[1] != 'response') stop(paste0('No response from the server. Error message from server is:\n', data$message))
   dataX <- httr::content(data, 'text')
   num <- gregexpr('returnURL', dataX)
   url2 <- substr(dataX, num[[1]][1]+10, num[[1]][2]-3)
-  outdata <- raster::raster(url2)
 
+  if(!is.null(save_path)){
+    message(paste0('Data is saved at:', save_path))
+    file_info <- httr::GET(url2, httr::write_disk(path = save_path, overwrite = T))
+    outdata <- raster::raster(save_path)
+  }else{
+    outdata <- raster::raster(url2)
+   }
   return(outdata)
 }
 
@@ -19,13 +22,10 @@ GetCDLDataP <- function(point, year, tol_time){
   url <- paste0('https://nassgeodata.gmu.edu/axis2/services/CDLService/GetCDLValue?year=',
                 year, '&x=', point[1],'&y=', point[2])
 
-  data <- tryCatch(httr::GET(url, httr::timeout(tol_time)),
-                   error = function(x) x)
+  data <- tryCatch(httr::GET(url, httr::timeout(tol_time)), error = function(x) x)
 
-  if(class(data)[1] != 'response') stop('Request time limit is reached. Try to increase tol_time, or try later.\n')
-
+  if(class(data)[1] != 'response') stop(paste0('No response from the server. Error message from server is:\n', data$message))
   dataX <- httr::content(data, 'text')
-
   num <- gregexpr('Result', dataX)[[1]]
   dataX <- substr(dataX, num[1]+8, num[2]-4)
 
@@ -40,47 +40,57 @@ GetCDLDataP <- function(point, year, tol_time){
 }
 
 
-GetCDLDataPs <- function(points, year, mat = F, tol_time){
+GetCDLDataPs <- function(points, year, tol_time, save_path){
   points <- paste0(points, collapse = ',')
   url <- paste0('https://nassgeodata.gmu.edu/axis2/services/CDLService/GetCDLFile?year=',
                 year, '&points=', points)
 
-  url2 <- tryCatch(httr::GET(url, httr::timeout(tol_time)),
-                   error = function(x) x)
-  if(class(url2)[1] != 'response') stop('Request time limit is reached. Try to increase tol_time, or try later.\n')
+  url2 <- tryCatch(httr::GET(url, httr::timeout(tol_time)), error = function(x) x)
+  if(class(url2)[1] != 'response') stop(paste0('No response from the server.\nError message from server is: "', url2$message, '"'))
 
   url2X <- httr::content(url2, as = 'text')
   num <- gregexpr('returnURL', url2X)[[1]]
   url2 <- substr(url2X, num[1]+10, num[2]-3)
 
-  outdata <- raster::raster(url2)
+  if(!is.null(save_path)){
+    message(paste0('Data is saved at:', save_path))
+    file_info <- httr::GET(url2, httr::write_disk(path = save_path, overwrite = T))
+    outdata <- raster::raster(save_path)
+  }else{
+    outdata <- raster::raster(url2)
+  }
   return(outdata)
 }
 
-GetCDLDataB <- function(box, year, mat = F, tol_time){
+
+GetCDLDataB <- function(box, year, tol_time, save_path){
   box <- paste0(box, collapse = ',')
   url <- paste0('https://nassgeodata.gmu.edu/axis2/services/CDLService/GetCDLFile?year=', year, '&bbox=', box)
 
-  url2 <- tryCatch(httr::GET(url, httr::timeout(tol_time)),
-                   error = function(x) x)
-  if(class(url2)[1] != 'response') stop('Request time limit is reached. Try to increase tol_time, or try later.\n')
+  url2 <- tryCatch(httr::GET(url, httr::timeout(tol_time)), error = function(x) x)
+  if(class(url2)[1] != 'response') stop(paste0('No response from the server.\nError message from server is: "', url2$message, '"'))
 
   url2X <- httr::content(url2, as = 'text')
   num <- gregexpr('returnURL', url2X)[[1]]
   url2 <- substr(url2X, num[1]+10, num[2]-3)
 
-  outdata <- raster::raster(url2)
+  if(!is.null(save_path)){
+    message(paste0('Data is saved at:', save_path))
+    file_info <- httr::GET(url2, httr::write_disk(path = save_path, overwrite = T))
+    outdata <- raster::raster(save_path)
+  }else{
+    outdata <- raster::raster(url2)
+  }
   return(outdata)
 }
 
 
 
-GetCDLCompF <- function(fips, year1, year2, mat = TRUE, tol_time, manual_try){
+GetCDLCompF <- function(fips, year1, year2, mat, tol_time, manual_try){
   url <- paste0('https://nassgeodata.gmu.edu/axis2/services/CDLService/GetCDLComp?year1=',
                 year1,'&year2=',year2,'&fips=', fips, '&format=csv')
 
-  data <- tryCatch(httr::GET(url, httr::timeout(tol_time)),
-                   error = function(x) x)
+  data <- tryCatch(httr::GET(url, httr::timeout(tol_time)), error = function(x) x)
 
   if(class(data)[1] == 'response'){
     dataX <- httr::content(data, 'text')
@@ -93,15 +103,18 @@ GetCDLCompF <- function(fips, year1, year2, mat = TRUE, tol_time, manual_try){
 
   if(data$status_code == 200){
     if(isTRUE(mat)){
-    num <- gregexpr('returnReportURL', dataX)
-    url2 <- substr(dataX, num[[1]][1]+16, num[[1]][2]-3)
-    outdata <- data.table::fread(url2)
-    if(nrow(outdata) == 0) stop(paste0('Error: The CDL TIF files are likely corrupted.'))
-    outdata$aoi <- fips
+      num <- gregexpr('returnReportURL', dataX)
+      url2 <- substr(dataX, num[[1]][1]+16, num[[1]][2]-3)
+      temp_file <- tempfile(fileext = '.csv')
+      temp_data <- utils::download.file(url = url2, destfile = temp_file, method = 'wget', quiet = T)
+      outdata <- data.table::fread(temp_file)
+      ignore_file <- file.remove(temp_file)
+      if(nrow(outdata) == 0) stop(paste0('Error: The CDL TIF files are likely corrupted.'))
+      outdata$aoi <- fips
     }else{
-    num <- gregexpr('returnTIFURL', dataX)
-    url2 <- substr(dataX, num[[1]][1]+13, num[[1]][2]-3)
-    outdata <- raster::raster(url2)
+      num <- gregexpr('returnTIFURL', dataX)
+      url2 <- substr(dataX, num[[1]][1]+13, num[[1]][2]-3)
+      outdata <- raster::raster(url2)
     }
   }else{
     if(isTRUE(dataXtry) & isTRUE(manual_try)){
@@ -119,7 +132,7 @@ GetCDLCompF <- function(fips, year1, year2, mat = TRUE, tol_time, manual_try){
 }
 
 
-GetCDLCompB <- function(box, year1, year2, mat = TRUE, tol_time, manual_try){
+GetCDLCompB <- function(box, year1, year2, mat, tol_time, manual_try){
   box <- paste0(box, collapse = ',')
   url <- paste0('https://nassgeodata.gmu.edu/axis2/services/CDLService/GetCDLComp?year1=',
                 year1,'&year2=',year2,'&bbox=', box, '&format=json')
@@ -140,7 +153,6 @@ GetCDLCompB <- function(box, year1, year2, mat = TRUE, tol_time, manual_try){
       num <- gregexpr('returnReportURL', dataX)
       url2 <- substr(dataX, num[[1]][1]+16, num[[1]][2]-3)
       outdataX <- RJSONIO::fromJSON(url2)$ow
-
       outdata <- lapply(outdataX, function(x) data.frame(matrix(unlist(x), nrow = 1), stringsAsFactors = F))
       outdata <- dplyr::bind_rows(outdata)[,-1]
       colnames(outdata) <- c('From', 'To', 'Count', 'Acreage')
@@ -168,7 +180,7 @@ GetCDLCompB <- function(box, year1, year2, mat = TRUE, tol_time, manual_try){
 }
 
 
-GetCDLCompPs <- function(points, year1, year2, mat = TRUE, tol_time, manual_try){
+GetCDLCompPs <- function(points, year1, year2, mat, tol_time, manual_try){
   points <- paste0(points, collapse = ',')
   url <- paste0('https://nassgeodata.gmu.edu/axis2/services/CDLService/GetCDLComp?year1=',
                 year1,'&year2=',year2,'&points=', points, '&format=csv')
@@ -188,7 +200,10 @@ GetCDLCompPs <- function(points, year1, year2, mat = TRUE, tol_time, manual_try)
     if(isTRUE(mat)){
       num <- gregexpr('returnReportURL', dataX)
       url2 <- substr(dataX, num[[1]][1]+16, num[[1]][2]-3)
-      outdata <- data.table::fread(url2)
+      temp_file <- tempfile(fileext = '.csv')
+      temp_data <- utils::download.file(url = url2, destfile = temp_file, method = 'wget', quiet = T)
+      outdata <- data.table::fread(temp_file)
+      ignore_file <- file.remove(temp_file)
       if(nrow(outdata) == 0) stop(paste0('Error: The CDL TIF files are likely corrupted.'))
       outdata$aoi <- points
     }else{
@@ -211,7 +226,7 @@ GetCDLCompPs <- function(points, year1, year2, mat = TRUE, tol_time, manual_try)
   return(outdata)
 }
 
-GetCDLImageF <- function(fips, year, format = 'png', destfile = NULL, verbose = TRUE, tol_time){
+GetCDLImageF <- function(fips, year, format, destfile, verbose, tol_time){
 
   url <- paste0('https://nassgeodata.gmu.edu/axis2/services/CDLService/GetCDLFile?year=', year, '&fips=', fips)
 
@@ -229,11 +244,11 @@ GetCDLImageF <- function(fips, year, format = 'png', destfile = NULL, verbose = 
   url4 <- substr(dataX, num[[1]][1]+15, num[[1]][2]-3)
 
   if(is.null(destfile)) destfile <- tempfile()
-  if(isTRUE(verbose)) cat('The', format, 'file is saved at ', destfile)
-  utils::download.file(url4, destfile = destfile, mode = 'wb')
+  if(isTRUE(verbose)) message('The ', format, ' file is saved at ', destfile, '\n')
+  utils::download.file(url4, destfile = destfile, mode = 'wb', method = 'wget', quiet = ifelse(isTRUE(verbose), FALSE, TRUE))
 }
 
-GetCDLImageB <- function(box, year, format = 'png', destfile = NULL, verbose = TRUE, tol_time){
+GetCDLImageB <- function(box, year, format, destfile, verbose, tol_time){
   box <- paste0(box, collapse = ',')
   url <- paste0('https://nassgeodata.gmu.edu/axis2/services/CDLService/GetCDLFile?year=', year, '&bbox=', box)
 
@@ -251,8 +266,8 @@ GetCDLImageB <- function(box, year, format = 'png', destfile = NULL, verbose = T
   url4 <- substr(dataX, num[[1]][1]+15, num[[1]][2]-3)
 
   if(is.null(destfile)) destfile <- tempfile()
-  if(isTRUE(verbose)) cat('The', format, 'file is saved at ', destfile)
-  utils::download.file(url4, destfile = destfile, mode = 'wb')
+  if(isTRUE(verbose)) message('The', format, 'file is saved at ', destfile, '\n')
+  utils::download.file(url4, destfile = destfile, mode = 'wb', method = 'wget', quiet = ifelse(isTRUE(verbose), FALSE, TRUE))
 }
 
 GetCDLImagePs <- function(points, year, format = 'png', destfile = NULL, verbose = TRUE, tol_time){
@@ -274,12 +289,12 @@ GetCDLImagePs <- function(points, year, format = 'png', destfile = NULL, verbose
   url4 <- substr(dataX, num[[1]][1]+15, num[[1]][2]-3)
 
   if(is.null(destfile)) destfile <- tempfile()
-  if(isTRUE(verbose)) cat('The', format, 'file is saved at ', destfile)
-  utils::download.file(url4, destfile = destfile, mode = 'wb')
+  if(isTRUE(verbose)) message('The', format, 'file is saved at ', destfile, '\n')
+  utils::download.file(url4, destfile = destfile, mode = 'wb', method = 'wget', quiet = ifelse(isTRUE(verbose), FALSE, TRUE))
 }
 
 
-GetCDLStatF <- function(fips, year, mat = FALSE, tol_time){
+GetCDLStatF <- function(fips, year, tol_time){
   url <- paste0('https://nassgeodata.gmu.edu/axis2/services/CDLService/GetCDLStat?year=',
                 year, '&fips=', fips, '&format=txt')
   data <- httr::GET(url, httr::timeout(tol_time))
@@ -288,13 +303,17 @@ GetCDLStatF <- function(fips, year, mat = FALSE, tol_time){
   num <- gregexpr('returnURL', dataX)
   url2 <- substr(dataX, num[[1]][1]+10, num[[1]][2]-3)
 
-  data <- data.table::fread(url2)
+  temp_file <- tempfile(fileext = '.csv')
+  temp_data <- utils::download.file(url = url2, destfile = temp_file, method = 'wget', quiet = T)
+  data <- data.table::fread(temp_file)
+  ignore_file <- file.remove(temp_file)
   data <- data[,-c(2,4)]
+
   return(data)
 }
 
 
-GetCDLStatPs <- function(points, year, mat = F, tol_time){
+GetCDLStatPs <- function(points, year, tol_time){
   points <- paste0(points, collapse = ',')
   url <- paste0('https://nassgeodata.gmu.edu/axis2/services/CDLService/GetCDLStat?year=',
                 year, '&points=', points, '&format=csv')
@@ -304,11 +323,15 @@ GetCDLStatPs <- function(points, year, mat = F, tol_time){
   num <- gregexpr('returnURL', url2X)[[1]]
   url2 <- substr(url2X, num[1]+10, num[2]-3)
 
-  data <- data.table::fread(url2)
+  temp_file <- tempfile(fileext = '.csv')
+  temp_data <- utils::download.file(url = url2, destfile = temp_file, method = 'wget', quiet = T)
+  data <- data.table::fread(temp_file)
+  ignore_file <- file.remove(temp_file)
+
   return(data)
 }
 
-GetCDLStatB <- function(box, year, mat = F, tol_time){
+GetCDLStatB <- function(box, year, tol_time){
   box <- paste0(box, collapse = ',')
   url <- paste0('https://nassgeodata.gmu.edu/axis2/services/CDLService/GetCDLStat?year=',
                 year, '&bbox=', box, '&format=json')
@@ -325,6 +348,3 @@ GetCDLStatB <- function(box, year, mat = F, tol_time){
   colnames(data) <- c('Value', 'Counts', 'Category', 'Color', 'Acreage')
   return(data)
 }
-
-
-

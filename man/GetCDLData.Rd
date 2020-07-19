@@ -10,7 +10,8 @@ GetCDLData(
   type = NULL,
   mat = FALSE,
   crs = NULL,
-  tol_time = 20
+  tol_time = 20,
+  save_path = NULL
 )
 }
 \arguments{
@@ -26,6 +27,9 @@ four corner points that defines a rectangle (or a box) area, or a single coordin
 \item{crs}{Coordinate system. NULL if use the default coordinate system (i.e., Albers projection); Use '+init=epsg:4326' for longitude/latitude.}
 
 \item{tol_time}{Number of seconds to wait for a response until giving up. Default is 20 seconds.}
+
+\item{save_path}{Path (including the file name with the suffix: '.tif') to save the TIF file.
+If a path is provided, the TIF file will be saved in the computer in the specified directory. Default: NULL}
 }
 \value{
 The function returns a raster TIF file or a data table that saves the cropland cover information. There are three columns in the returned data table. The first two are
@@ -35,8 +39,8 @@ Users can also use \code{data(linkdata)} to get those data directly from this pa
 Yet, be noted that the linkdata saved in this package is not frequently updated.
 }
 \description{
-A function that makes HTTP GET requests for CDL raster data for any Area of Interests (AOI) in a given year.
-This function implements the GetCDLData service provided by the CropScape \url{https://nassgeodata.gmu.edu/CropScape}.
+A function that makes HTTP GET requests for CDL raster data for any Area of Interests (AOI) in a given year. The raster data are read into R using the \code{raster}
+function in the \code{raster} package. This function implements the GetCDLData service provided by the CropScape \url{https://nassgeodata.gmu.edu/CropScape}.
 }
 \details{
 An AOI can be a county defined by a 5-digit FIPS code, a triangle area (defined by three coordinates),
@@ -57,11 +61,21 @@ For instance, if latitude/longitude is used, users should specify the AOI as
 The \code{tol_time} argument specifies the time limit for making the HTTP GET request. This is useful particularly when the CropScape server has an issue with processing the data.
 CropScape could sometime take minutes before returning an error saying that the requested data are not available. By setting a time limit, the \code{GetCDLComp} function would stop
 making the data requests when the time limit is reached. The default time limit is 20 seconds.
+
+Users can choose to save the raster TIF file in their computers when requesting the CDL data, simply by specifying a directory name
+in \code{save_path}. In this case, \code{GetCDLData} will first save the data and then read the saved data into \code{R} using the \code{raster} function
+from the \code{raster} package. For example, when letting \code{save_path} be 'C:/test.tif', the raster TIF file will be saved at the 'C' disk in the name of
+'test.tif'. If \code{save_path} is NULL (default), the raster TIF file will not be saved but directly read into the \code{R} environment through the \code{raster} function.
 }
 \examples{
 \donttest{
 # Example. Retrieve data for the Champaign county in Illinois (FIPS = 17109) in 2018.
 data <- GetCDLData(aoi = 17019, year = 2018, type = 'f')
+raster::plot(data) # plot the data.
+
+# Same request but also save the raster data as a TIF file.
+# Note: A temporary file is created to save the data using the tempfile function
+data <- GetCDLData(aoi = 17019, year = 2018, type = 'f', save_path = tempfile(fileext = 'tif'))
 raster::plot(data) # plot the data.
 
 # Example. Retrieve data for a single point by long/lat in 2018.
@@ -84,4 +98,5 @@ data <- GetCDLData(aoi = c(-88.2, 40.03, -88.1, 40.1), year = '2018', type = 'b'
 crs = '+init=epsg:4326')
 raster::plot(data)
 }
+
 }
