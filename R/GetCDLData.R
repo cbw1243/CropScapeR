@@ -55,7 +55,7 @@
 #'
 #' # Same request but also save the raster data as a TIF file.
 #' # Note: A temporary file is created to save the data using the tempfile function
-#' data <- GetCDLData(aoi = 17019, year = 2018, type = 'f', save_path = tempfile(fileext = 'tif'))
+#' data <- GetCDLData(aoi = 17019, year = 2018, type = 'f', save_path = tempfile(fileext = '.tif'))
 #' raster::plot(data) # plot the data.
 #'
 #' # Example. Retrieve data for a single point by long/lat in 2018.
