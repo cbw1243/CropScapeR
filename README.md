@@ -25,9 +25,21 @@ The `GetCDLComp` service performs cropland change analysis by comparing the pixe
 ## Package usage  
 The four functions introduced above take three necessary inputs to work: `aoi`, `year`, `type`. API key is not needed. 
 
-* aoi: Area of Interest. An AOI can be a county (defined by county FIPS code), a rectangle/box (defined by four corner points), a polygon (defined by multiple points), a point (defined a single coordinate), or a custom area (defined by an ESRI shapefile provided by users). 
-* year: a year value.   
-* type: Type of the AOI. 'f' for county, 'b' for box area, 'ps' for polygon, 'p' for a single coordinate, 's' for ESRI shapefile.
+* `aoi`: Area of Interest. An AOI can be a county (defined by county FIPS code), a rectangle/box (defined by four corner points), a polygon (defined by multiple points), a point (defined a single coordinate), or a custom area (defined by an ESRI shapefile provided by users). 
+* `year`: a year value.   
+* `type`: Type of the AOI. 'f' for county, 'b' for box area, 'ps' for polygon, 'p' for a single coordinate, 's' for ESRI shapefile.
+
+Below are some examples. 
+
+### `GetCDLData` 
+Get data for a county (e.g., Champaign county in Illinois, FIPS code: 17019): 
+```
+data <- GetCDLData(aoi = 17019, year = 2018, type = 'f')
+```
+Get data for a county (e.g., Champaign county in Illinois, FIPS code: 17019): 
+
+
+
 
 
 
