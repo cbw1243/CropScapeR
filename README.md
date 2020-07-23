@@ -113,11 +113,14 @@ The development version provides the most recent updates of the package.
 
 Note: `CropScapeR` package depends on the `rgdal` and `sp` packages to process the raster files. 
 
+## Contact   
+[Bowen Chen](https://www.bwchen.com), PhD (bwchen@illinois.edu)
+
 ## Acknowledgement      
 The development of this package was supported by USDA-NRCS Agreement No. NR193A750016C001 through the Cooperative Ecosystem Studies Units network. Any opinions, findings, conclusions, or recommendations expressed are those of the author(s) and do not necessarily reflect the view of the U.S. Department of Agriculture. 
 
-## Contact   
-[Bowen Chen](https://www.bwchen.com), PhD (bwchen@illinois.edu)
+Dr. [Benjamin Gramig](https://www.bengramig.com/) is a contributor of this package. I thank Dr. [Taro Mieno](http://taromieno.netlify.com/) for providing useful suggestions. 
+
 
 ## Reference   
 
