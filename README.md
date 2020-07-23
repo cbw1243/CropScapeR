@@ -31,12 +31,12 @@ The four functions introduced above take three necessary inputs to work: `aoi`, 
 * `type`: Type of the AOI. 'f' for county, 'b' for box area, 'ps' for polygon, 'p' for a single coordinate, 's' for ESRI shapefile.
 
 ### Examples  
-1. Get data for a county 
+#### Get data for a county 
 ```
 # Champaign county in Illinois, FIPS code: 17019
 data <- GetCDLData(aoi = 17019, year = 2018, type = 'f')
 ```
-2. Get data for a box area 
+#### Get data for a box area    
 The AOI should be a numeric vector with 4 elements. The format to define the box is (min x, min y, max x, max y).  
 ```
 data <- GetCDLData(aoi = c(130783,2203171,153923,2217961), year = 2018, type = 'b')
@@ -58,20 +58,20 @@ data <- GetCDLData(aoi = bbox, year = '2018', type = 'b')
 ```
 The above example assumes that the shapefile has the Albers projection system. If not, make sure that you specify the correct system (same to the shapefile) in `crs`. 
 
-3. Get data for a polygon  
+#### Get data for a polygon     
 The AOI should be a numeric vector with at least 6 elements. The format to define the polygon is (x1, y2, x2, y2, ..., xn, yn).  
 ```
 # A  triangle area defined by 3 coordinates 
 data <- GetCDLData(aoi = c(175207,2219600,175207,2235525,213693,2219600), year = '2018', type = 'ps')
 ```
 
-4. Get data for a point  
+#### Get data for a point     
 The AOI should be a numeric vector with 2 elements. The format to define the point is (x, y).  
 ```
 data <- GetCDLData(aoi = c(-94.6754,42.1197), year = 2018, type = 'p', crs = '+init=epsg:4326')
 ```
 
-5. Get data for a custom area defined by a shapefile 
+#### Get data for a custom area defined by a shapefile   
 The CropScape server takes shapefile as an AOI to make data request. Yet, it requires users to provide a URL of a compressed ESRI shapefile. The .shp, .shx, .dbf, and .prj files must all be compressed with no subdirectories in a single ZIP file. In cases that the compressed shapefile is saved in the local disk, this shapefile needs to be published to a website URL (so CropScape can read the shapefile). 
 
 There are many ways to generate a URL for a file saved in the computer. Here is an example. Assume that you save the zipped shapefile in Dropbox. First, create a link to the file by right clicking on the file and then selecting 'Copy Dropbox link'. In my case, I get this link: https://www.dropbox.com/s/cvcxjpyakxfyfpm/York_SF_watershed.zip?dl=0
