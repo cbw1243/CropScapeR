@@ -25,9 +25,9 @@
 #'
 #' @param aoi Area of interest. Can be a 5-digit FIPS code of a county, four corner points that defines a rectangle (or a box) area,
 #' multiple coordinates that defines a polygon, or a URL of an compressed ESRI shapefile.
-#' @param year1 Year 1. Should be a 4-digit numerical value.
-#' @param year2 Year 2. Should be a 4-digit numerical value.
-#' @param type Type of the selected AOI. 'f' for county, 'b' for box area, 'ps' for polygon, 'p' for a single coordinate, 's' for ESRI shapefile.
+#' @param year1 Year 1. Should be a 4-digit numeric value.
+#' @param year2 Year 2. Should be a 4-digit numeric value.
+#' @param type Type of the selected AOI. 'f' for county, 'b' for box area, 'ps' for polygon, 's' for ESRI shapefile.
 #' @param mat \code{TRUE}/\code{FALSE}. If \code{TRUE}, return a data frame. If \code{FALSE} (default), return a raster tif file.
 #' @param crs Coordinate system. \code{NULL} if use the default coordinate system (i.e., Albers projection); Use '+init=epsg:4326' for longitude/latitude.
 #' @param tol_time Number of seconds to wait for a response until giving up. Default is 20 seconds.
@@ -63,6 +63,7 @@ GetCDLComp <- function(aoi, year1, year2, type, mat = TRUE, crs = NULL, tol_time
   }
 
   if(type == 's'){
+    if(!is.null(crs)) stop('The coordinate system must be the Albers projection system. \n')
     data <- GetCDLCompS(poly = aoi, year1 = year1, year2 = year2, mat = mat, tol_time = tol_time, manual_try = manual_try)
   }
 

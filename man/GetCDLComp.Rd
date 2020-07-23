@@ -19,11 +19,11 @@ GetCDLComp(
 \item{aoi}{Area of interest. Can be a 5-digit FIPS code of a county, four corner points that defines a rectangle (or a box) area,
 multiple coordinates that defines a polygon, or a URL of an compressed ESRI shapefile.}
 
-\item{year1}{Year 1. Should be a 4-digit numerical value.}
+\item{year1}{Year 1. Should be a 4-digit numeric value.}
 
-\item{year2}{Year 2. Should be a 4-digit numerical value.}
+\item{year2}{Year 2. Should be a 4-digit numeric value.}
 
-\item{type}{Type of the selected AOI. 'f' for county, 'b' for box area, 'ps' for polygon, 'p' for a single coordinate, 's' for ESRI shapefile.}
+\item{type}{Type of the selected AOI. 'f' for county, 'b' for box area, 'ps' for polygon, 's' for ESRI shapefile.}
 
 \item{mat}{\code{TRUE}/\code{FALSE}. If \code{TRUE}, return a data frame. If \code{FALSE} (default), return a raster tif file.}
 

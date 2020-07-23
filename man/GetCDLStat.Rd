@@ -10,7 +10,7 @@ GetCDLStat(aoi = NULL, year = NULL, type = NULL, crs = NULL, tol_time = 20)
 \item{aoi}{Area of interest. Can be a 5-digit FIPS code of a county, four corner points that defines a rectangle (or a box) area,
 multiple coordinates that defines a polygon, or a URL of an compressed ESRI shapefile.}
 
-\item{year}{Year of data. Should be a 4-digit numerical value.}
+\item{year}{Year of data. Should be a 4-digit numeric value.}
 
 \item{type}{Type of the selected AOI. 'f' for county, 'b' for box area, 'ps' for polygon, 's' for ESRI shapefile.}
 

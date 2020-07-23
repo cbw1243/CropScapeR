@@ -8,7 +8,7 @@
 #'
 #' @param aoi Area of interest. Can be a 5-digit FIPS code of a county, four corner points that defines a rectangle (or a box) area,
 #' multiple coordinates that defines a polygon, or a URL of an compressed ESRI shapefile.
-#' @param year  Year of data. Should be a 4-digit numerical value.
+#' @param year  Year of data. Should be a 4-digit numeric value.
 #' @param type Type of the selected AOI. 'f' for county, 'b' for box area, 'ps' for polygon, 's' for ESRI shapefile.
 #' @param format Format of the image file. Can be png or kml.
 #' @param crs Coordinate system. \code{NULL} if use the default coordinate system (i.e., Albers projection); Use '+init=epsg:4326' for longitude/latitude.
@@ -33,6 +33,7 @@ GetCDLImage <- function(aoi = NULL, year = NULL, type = NULL, format = 'png',
   }
 
   if(type == 'f'){
+    if(!is.null(crs)) stop('The coordinate system must be the Albers projection system. \n')
     GetCDLImageS(poly = aoi, year = year, format = format, verbose = verbose, destfile = destfile, tol_time = tol_time)
   }
 
