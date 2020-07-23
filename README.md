@@ -11,7 +11,8 @@ The [Cropland Data Layer (CDL)](https://www.nass.usda.gov/Research_and_Science/C
 We implement four geospatial processing services provided by [CropScape](https://nassgeodata.gmu.edu/CropScape/) in `R`: 
 
 1. `GetCDLValue`/`GetCDLFile`         
-The `GetCDLValue` service finds the pixel value at a given location (defined by a coordinate), and the `GetCDLFile` service fetches irregularly shaped CDL data[2]. The shape could be a county boundary (defined by county FIPS code), a triangle area (defined by three coordinates), or a rectangle/box (defined by four corner points). The `GetCDLValue` and `GetCDLFile` services are implemented by a single R function: `GetCDLData`. The `GetCDLData` function takes an Area of Interest (AOI) and a crop year value as inputs and return the CDL raster data. The raster data can be saved as TIF file or a data table. Examples are provided in the help file of `GetCDLData`.    
+The `GetCDLValue` service finds the pixel value at a given location (defined by a coordinate), and the `GetCDLFile` service fetches irregularly shaped CDL data[2]. The `GetCDLValue` and `GetCDLFile` services are implemented in `R` by one function: `GetCDLData`. The `GetCDLData` function takes an Area of Interest (AOI) and a year value as inputs and return the requested CDL raster data. The raster data can be saved as TIF file or a data frame. 
+
 2. `GetCDLImage`         
 The `GetCDLImage` service generates the preview images of the customized CDL data and the Keyhole Markup Language (KML) file with links to actual images that can be displayed in Google Earth[2]. This service is implemented by the `GetCDLImage` function.
 
@@ -21,7 +22,14 @@ The `GetCDLImage` service generates statistical information (for example, value,
 4. `GetCDLComp`            
 The `GetCDLComp` service performs cropland change analysis by comparing the pixels of the cropland area defined by AOI between two given years[2]. This service is implemented by the `GetCDLComp` function.
 
-Examples using the `R` functions are provided in the function help files. CropScape provides several other geoprocessing services, and they would be implemented in R in future developments. 
+## Package usage  
+The four functions introduced above take three necessary inputs to work: `aoi`, `year`, `type`. API key is not needed. 
+
+* aoi: Area of Interest. An AOI can be a county (defined by county FIPS code), a rectangle/box (defined by four corner points), a polygon (defined by multiple points), a point (defined a single coordinate), or a custom area (defined by an ESRI shapefile provided by users). 
+* year: a year value.   
+* type: Type of the AOI. 'f' for county, 'b' for box area, 'ps' for polygon, 'p' for a single coordinate, 's' for ESRI shapefile.
+
+
 
 ## Package installation 
 The `CropScapeR` package is accepted by `CRAN`, it can be directly installed in `R`
