@@ -1,44 +1,37 @@
-#' Request for data from CropScape on land cover changes over time
+#' Request data on land cover changes over time
 #'
-#' A function that makes HTTP GET requests from CropScape for land cover changes over time. This function implements the GetCDLComp service provided by CropScape \url{https://nassgeodata.gmu.edu/CropScape}.
+#' A function that requests data on land cover changes over time from the CropScape. This function implements the GetCDLComp service provided by the CropScape \url{https://nassgeodata.gmu.edu/CropScape}.
 #'
-#' Land cover changes are obtained by first merging two raster files in two different years (year1 and year 2) together based on the geographic coordinates. The merged file reports
-#' land cover for each pixel used in year1 and year2. Secondly, the function aggregates the data by counting the number of pixels by types of land cover changes, such as corn to soybeans.
-#' The final product of this function returns pixel counts and acreages (calculated from pixel counts) for each type of land cover from year1 to year2 in the AOI.
+#' Land cover changes are obtained by first merging two raster files in two different years (year1 and year 2) together based on the geographic coordinates, and then count
+#' the number of pixels (or grids) by types of land cover changes, such as corn to soybeans. The process is done in the CropScape server (the default option) or inside the \code{GetDataComp} function.
 #'
-#' Note that the two rasters must have the same spatial resolutions and identical coordinates to be directly merged together. This is necessary for obtaining data on land cover change directly
-#' from CropScape. However, the \code{GetCDLComp} function allows users to obtain land cover changes from two raster files that have different resolutions. This is achieved by resample the raster
-#' data using the nearest neighbor resampling technique such that both rasters have the same resolutions (the finer resolution raster is downscaled to lower resolution). Then, crop land changes are
-#' obtained from a manual processing based on the \code{manualrotate} function.  This functionality is useful considering that the rasters in 2006 and 2007 are at 56-meter resolution,
-#' different to rasters in other years that are at 30-meter resolution. Also note that the resampling process will lead to sampling errors.
-#' Whenever the manual calculation of land cover changes is used, a warning message will show up to alert users.
+#' To obtain land cover chaneg data, the raster objects in two different years must have the same spatial resolutions and identical coordinates to be directly merged together.
+#' The CropScape server does internal checks on this and would report an error if the two rasters cannot be directly merged together due to unequal spatial resolution or different
+#' coordinates. However, the \code{GetCDLComp} function allows users to obtain land cover changes from two raster files that have different resolutions. This is achieved by resample the raster
+#' data using the nearest neighbor resampling technique such that both rasters have the same resolutions (the finer resolution raster is downscaled to lower resolution).
+#' Then, the resampled data are processed automatically to get data on land cover changes (this is done by using the \code{manualrotate} function).
+#' This feature is useful when dealing with the rasters in 2006 and 2007, which are at 56-meter resolution. While the rasters in other years are at 30-meter resolution.
+#' Also note that the resampling process will lead to sampling errors. Whenever the manual calculation of land cover changes is used, a warning message will show up to alert users.
 #' If without warning, the data are directly from the CropScape GetCDLComp service.
 #'
-#' In rare cases, CropScape fails to generate land cover change data even without the issue of unequal spatial resolution. A common issue is mismatch in data sizes: the raster files in two years
+#' In rare cases, the CropScape server fails to generate land cover change data even without the issue of unequal spatial resolution. A common issue is mismatch in data sizes: the raster objects in two years
 #' have different pixel numbers. It is unclear that why this would happen. Nevertheless, when there is data mismatch, the \code{GetCDLComp} function will attempt to calculate for land cover change
 #' manually using the \code{manual_rotate} function. Data associated with the unmatched coordinates are
-#' discarded at the merging process. Again, a warning message will show up to alert users.
+#' discarded at the merging process. Again, a warning message will show up to alert users if \code{manual_rotate} function is used. If no coordinates can be matched, the
+#' \code{manual_rotate} function would also fail to get land cover change data. In this case, a warning message will show up to alert users.
 #'
-#' In some cases, the two raster files for the same AOI do not have matched coordinates (the reasons are unknown). CropScape cannot calculate land cover changes,
-#' neither does the \code{manual_rotate} function. A warning message will show up to alert users.
+#' The usage of this function is similar to the \code{GetCDLData} function. Please see the help page of the \code{GetCDLData} function
+#' for details. Note that the \code{aoi} cannot be a single point here.
 #'
-#' The \code{tol_time} argument specifies the time limit for making the HTTP GET request. This is useful particularly when the CropScape server has an issue with processing the data.
-#' CropScape could sometime take minutes before returning an error saying that the requested data are not available. By setting a time limit, the \code{GetCDLComp} function would stop
-#' making the data requests when the time limit is reached. The default time limit is 20 seconds.
-#'
-#'
-#'
-#' @param aoi Area of interest. Could be a 5-digit FIPS code of a county, three coordinates that defines a triangle,
-#' or four corner points that defines a rectangle (or a box), or a single coordinate. The default coordinate system used by CDL is a projected
-#' coordinate system called Albers projection (or Albers equal-area conic projection). Users could specify coordinates based on a
-#' different coordinate system (defined by the \code{crs} argument), including the geographic coordinate system such as latitude-longitude.
+#' @param aoi Area of interest. Can be a 5-digit FIPS code of a county, four corner points that defines a rectangle (or a box) area,
+#' multiple coordinates that defines a polygon, or a URL of an compressed ESRI shapefile.
 #' @param year1 Year 1. Should be a 4-digit numerical value.
 #' @param year2 Year 2. Should be a 4-digit numerical value.
-#' @param type Type of AOI. 'f' for county, 'ps' for triangle with multiple coordinates, 'b' for box with four corner points.
-#' @param mat TRUE/FALSE. If TRUE (default), return a data table. If FALSE, return a raster file;
-#' @param crs Coordinate system. NULL if use the default coordinate system (e.g., Albers projection); Use '+init=epsg:4326' for longitude/latitude.
+#' @param type Type of the selected AOI. 'f' for county, 'b' for box area, 'ps' for polygon, 'p' for a single coordinate, 's' for ESRI shapefile.
+#' @param mat \code{TRUE}/\code{FALSE}. If \code{TRUE}, return a data frame. If \code{FALSE} (default), return a raster tif file.
+#' @param crs Coordinate system. \code{NULL} if use the default coordinate system (i.e., Albers projection); Use '+init=epsg:4326' for longitude/latitude.
 #' @param tol_time Number of seconds to wait for a response until giving up. Default is 20 seconds.
-#' @param manual_try True (default) for trying calculating land cover changes using the~\code{manualrotate} function. If False, no attempt is made.
+#' @param manual_try \code{True} (default) for trying calculating land cover changes using the \code{manualrotate} function. If \code{False}, no attempt is made.
 #'
 #' @return
 #' The function returns a data table or a raster file.
@@ -51,7 +44,7 @@
 #' data <- GetCDLComp(aoi = '17019', year1 = 2017, year2 = 2018, type = 'f')
 #' head(data, 5)
 #'
-#' # Example 2. Retrieve data for a triangle defined by three coordinates in 2017-2018.
+#' # Example 2. Retrieve data for a polygon (a triangle) defined by three coordinates in 2017-2018.
 #' aoi <- c(175207,2219600,175207,2235525,213693,2219600)
 #' data <- GetCDLComp(aoi = aoi, year1 = 2017, year2 = 2018, type = 'ps')
 #' head(data, 5)
@@ -63,14 +56,18 @@
 GetCDLComp <- function(aoi, year1, year2, type, mat = TRUE, crs = NULL, tol_time = 20, manual_try = TRUE){
   targetCRS <- "+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
 
-  if(!type %in% c('f', 'ps', 'b')) stop('The type value is wrong.')
+  if(!type %in% c('f', 'ps', 'b', 'p', 's')) stop('Invalid type value. See details. \n')
 
   if(type == 'f'){
     data <- GetCDLCompF(fips = aoi, year1 = year1, year2 = year2, mat = mat, tol_time = tol_time, manual_try = manual_try)
   }
 
+  if(type == 's'){
+    data <- GetCDLCompS(poly = aoi, year1 = year1, year2 = year2, mat = mat, tol_time = tol_time, manual_try = manual_try)
+  }
+
   if(type == 'ps'){
-    if(length(aoi) < 6) stop('For points, at least 6 values (3 coordinates) have to be provided for aoi.')
+    if(length(aoi) < 6) stop('The aoi must be a numerical vector with at least 6 elements. \n')
     if(!is.null(crs)){
       numps <- length(aoi) # Number of points
       oldpoints <- sp::SpatialPoints(cbind(aoi[seq(1, numps, by = 2)], aoi[seq(2, numps, by = 2)]), sp::CRS(crs))
@@ -81,7 +78,7 @@ GetCDLComp <- function(aoi, year1, year2, type, mat = TRUE, crs = NULL, tol_time
   }
 
   if(type == 'b'){
-    if(length(aoi) != 4) stop('For box, 4 values (2 coordinate points) have to be provided for aoi.')
+    if(length(aoi) != 4) stop('The aoi must be a numerical vector with 4 elements. \n')
     if(!is.null(crs)){
       numps <- length(aoi) # Number of points
       oldpoints <- sp::SpatialPoints(cbind(aoi[seq(1, numps, by = 2)], aoi[seq(2, numps, by = 2)]), sp::CRS(crs))

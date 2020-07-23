@@ -2,30 +2,32 @@
 % Please edit documentation in R/GetCDLStat.R
 \name{GetCDLStat}
 \alias{GetCDLStat}
-\title{Request for summary statistics of the CDL data}
+\title{Request summary statistics of the CDL data}
 \usage{
 GetCDLStat(aoi = NULL, year = NULL, type = NULL, crs = NULL, tol_time = 20)
 }
 \arguments{
-\item{aoi}{Area of interest. Could be a 5-digit FIPS code of a county, three coordinates that defines a triangle,
-or four corner points that defines a rectangle (or a box), or a single coordinate. The default coordinate system used by CDL is a projected
-coordinate system called Albers projection (or Albers equal-area conic projection). Users could specify coordinates based on a
-different coordinate system (defined by the \code{crs} argument), including the geographic coordinate system such as latitude-longitude.}
+\item{aoi}{Area of interest. Can be a 5-digit FIPS code of a county, four corner points that defines a rectangle (or a box) area,
+multiple coordinates that defines a polygon, or a URL of an compressed ESRI shapefile.}
 
-\item{year}{Year of data to request. Should be a 4-digit numerical value.}
+\item{year}{Year of data. Should be a 4-digit numerical value.}
 
-\item{type}{Type of AOI. 'f' for county, 'ps' for triangle with multiple coordinates, 'b' for box with four corner points, 'p' for a single coordinate.}
+\item{type}{Type of the selected AOI. 'f' for county, 'b' for box area, 'ps' for polygon, 's' for ESRI shapefile.}
 
-\item{crs}{Coordinate system. NULL if use the default coordinate system (e.g., Albers projection); Use '+init=epsg:4326' for longitude/latitude.}
+\item{crs}{Coordinate system. \code{NULL} if use the default coordinate system (i.e., Albers projection); Use '+init=epsg:4326' for longitude/latitude.}
 
 \item{tol_time}{Number of seconds to wait for a response until giving up. Default is 20 seconds.}
 }
 \value{
-The function returns a data frame that reports summary statistics of the CDL data for an area of interest in a given year.
+The function returns a data frame that reports summary statistics of the CDL data for an AOI in a given year.
 }
 \description{
-A function that makes HTTP GET requests for the CDL raster data for an area of interests in a given crop year.
+A function that requests summary statistics of the CDL data for any Area of Interests (AOI) in a given year from the CropScape.
 This function implements the GetCDLStat services provided by the CropScape \url{https://nassgeodata.gmu.edu/CropScape}.
+}
+\details{
+The usage of this function is similar to the \code{GetCDLData} function. Please see the help page of the \code{GetCDLData} function
+for details. Note that the \code{aoi} cannot be a single point here.
 }
 \examples{
 \donttest{
@@ -33,7 +35,7 @@ This function implements the GetCDLStat services provided by the CropScape \url{
 data <- GetCDLStat(aoi = 17019, year = 2018, type = 'f')
 head(data, n = 5) # Show top 5 rows of retrieved data
 
-# Example 2. Retrieve data for a triangle defined by three coordinates in 2018.
+# Example 2. Retrieve data for a polygon (a triangle) defined by three points in 2018.
 data <- GetCDLStat(aoi = c(175207,2219600,175207,2235525,213693,2219600), year = 2018, type = 'ps')
 head(data, n = 5)
 

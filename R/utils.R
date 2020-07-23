@@ -1,3 +1,26 @@
+GetCDLDataS <- function(poly, year, tol_time, save_path){
+  url <- paste0('https://nassgeodata.gmu.edu/axis2/services/CDLService/GetCDLFile?year=', year, '&aoiURL=', poly)
+  data <- tryCatch(httr::GET(url, httr::timeout(tol_time)), error = function(x) x)
+
+  if(class(data)[1] != 'response') stop(paste0('No response from the server. Error message from server is:\n', data$message))
+  dataX <- httr::content(data, 'text')
+
+  if(grepl('Error', dataX)) stop(dataX)
+
+  num <- gregexpr('returnURL', dataX)
+  url2 <- substr(dataX, num[[1]][1]+10, num[[1]][2]-3)
+
+  if(!is.null(save_path)){
+    message(paste0('Data is saved at:', save_path))
+    file_info <- httr::GET(url2, httr::write_disk(path = save_path, overwrite = T))
+    outdata <- raster::raster(save_path)
+  }else{
+    outdata <- raster::raster(url2)
+  }
+  return(outdata)
+}
+
+
 GetCDLDataF <- function(fips, year, tol_time, save_path){
   url <- paste0('https://nassgeodata.gmu.edu/axis2/services/CDLService/GetCDLFile?year=', year, '&fips=', fips)
   data <- tryCatch(httr::GET(url, httr::timeout(tol_time)), error = function(x) x)
@@ -85,6 +108,52 @@ GetCDLDataB <- function(box, year, tol_time, save_path){
 }
 
 
+GetCDLCompS <- function(poly, year1, year2, mat, tol_time, manual_try){
+  url <- paste0('https://nassgeodata.gmu.edu/axis2/services/CDLService/GetCDLComp?year1=',
+                year1,'&year2=',year2,'&aoiURL=', poly, '&format=csv')
+
+  data <- tryCatch(httr::GET(url, httr::timeout(tol_time)), error = function(x) x)
+
+  if(class(data)[1] == 'response'){
+    dataX <- httr::content(data, 'text')
+    if(grepl('Error', data)) stop(dataX)
+  }else{
+    dataX <- data$message
+    if(grepl('Error', data)) stop(dataX)
+    data$status_code <- 999
+  }
+
+  dataXtry <- grepl('ERROR 1: TIFFFetchDirectory', dataX) | grepl('Mismatch size of file 1 and file 2', dataX) | grepl('Timeout was reached', dataX)
+
+  if(data$status_code == 200){
+    if(isTRUE(mat)){
+      num <- gregexpr('returnReportURL', dataX)
+      url2 <- substr(dataX, num[[1]][1]+16, num[[1]][2]-3)
+      temp_file <- tempfile(fileext = '.csv')
+      temp_data <- utils::download.file(url = url2, destfile = temp_file, method = 'wget', quiet = T)
+      outdata <- data.table::fread(temp_file)
+      ignore_file <- file.remove(temp_file)
+      if(nrow(outdata) == 0) stop(paste0('Error: The CDL TIF files are likely corrupted.'))
+      outdata$aoi <- poly
+    }else{
+      num <- gregexpr('returnTIFURL', dataX)
+      url2 <- substr(dataX, num[[1]][1]+13, num[[1]][2]-3)
+      outdata <- raster::raster(url2)
+    }
+  }else{
+    if(isTRUE(dataXtry) & isTRUE(manual_try)){
+      datat1 <- GetCDLData(aoi = poly, year = year1, mat = FALSE, type = 's', tol_time)
+      datat2 <- GetCDLData(aoi = poly, year = year2, mat = FALSE, type = 's', tol_time)
+      outdata <- manualrotate(datat1, datat2)
+      if(nrow(outdata) == 0) stop('Warning: CropScape cannot calculate for crop cover changes. Attempted manual calculation, but there is no match between the raster files.\n')
+      outdata$aoi <- poly
+      warning(paste0('Warning: CropScape cannot calculate for crop cover changes. The returned data are calculated manually using the manualrotate function.\n Error message from CropScape is :', dataX))
+    }else{
+      stop(paste0('Error: The requested data might not exist in the CDL database. \nError message from CropScape is :', dataX))
+    }
+  }
+  return(outdata)
+}
 
 GetCDLCompF <- function(fips, year1, year2, mat, tol_time, manual_try){
   url <- paste0('https://nassgeodata.gmu.edu/axis2/services/CDLService/GetCDLComp?year1=',
@@ -226,6 +295,28 @@ GetCDLCompPs <- function(points, year1, year2, mat, tol_time, manual_try){
   return(outdata)
 }
 
+GetCDLImageS <- function(poly, year, format, destfile, verbose, tol_time){
+
+  url <- paste0('https://nassgeodata.gmu.edu/axis2/services/CDLService/GetCDLFile?year=', year, '&aoiURL=', poly)
+
+  url2 <- httr::GET(url, httr::timeout(tol_time))
+  url2X <- httr::content(url2, as = 'text')
+  num <- gregexpr('returnURL', url2X)[[1]]
+  url2 <- substr(url2X, num[1]+10, num[2]-3)
+
+  url3 <- paste0('https://nassgeodata.gmu.edu/axis2/services/CDLService/GetCDLImage?files=',
+                 url2, '&format=', format)
+  data <- httr::GET(url3)
+  dataX <- httr::content(data, 'text')
+
+  num <- gregexpr('returnURLArray', dataX)
+  url4 <- substr(dataX, num[[1]][1]+15, num[[1]][2]-3)
+
+  if(is.null(destfile)) destfile <- tempfile()
+  if(isTRUE(verbose)) message('The ', format, ' file is saved at ', destfile, '\n')
+  utils::download.file(url4, destfile = destfile, mode = 'wb', method = 'wget', quiet = ifelse(isTRUE(verbose), FALSE, TRUE))
+}
+
 GetCDLImageF <- function(fips, year, format, destfile, verbose, tol_time){
 
   url <- paste0('https://nassgeodata.gmu.edu/axis2/services/CDLService/GetCDLFile?year=', year, '&fips=', fips)
@@ -270,7 +361,7 @@ GetCDLImageB <- function(box, year, format, destfile, verbose, tol_time){
   utils::download.file(url4, destfile = destfile, mode = 'wb', method = 'wget', quiet = ifelse(isTRUE(verbose), FALSE, TRUE))
 }
 
-GetCDLImagePs <- function(points, year, format = 'png', destfile = NULL, verbose = TRUE, tol_time){
+GetCDLImagePs <- function(points, year, format, destfile, verbose, tol_time){
   points <- paste0(points, collapse = ',')
   url <- paste0('https://nassgeodata.gmu.edu/axis2/services/CDLService/GetCDLFile?year=',
                 year, '&points=', points)
@@ -291,6 +382,25 @@ GetCDLImagePs <- function(points, year, format = 'png', destfile = NULL, verbose
   if(is.null(destfile)) destfile <- tempfile()
   if(isTRUE(verbose)) message('The', format, 'file is saved at ', destfile, '\n')
   utils::download.file(url4, destfile = destfile, mode = 'wb', method = 'wget', quiet = ifelse(isTRUE(verbose), FALSE, TRUE))
+}
+
+GetCDLStatS <- function(poly, year, tol_time){
+  url <- paste0('https://nassgeodata.gmu.edu/axis2/services/CDLService/GetCDLStat?year=',
+                year, '&aoiURL=', poly, '&format=txt')
+  data <- httr::GET(url, httr::timeout(tol_time))
+  dataX <- httr::content(data, 'text')
+  if(grepl('Error', dataX)) stop(dataX)
+
+  num <- gregexpr('returnURL', dataX)
+  url2 <- substr(dataX, num[[1]][1]+10, num[[1]][2]-3)
+
+  temp_file <- tempfile(fileext = '.csv')
+  temp_data <- utils::download.file(url = url2, destfile = temp_file, method = 'wget', quiet = T)
+  data <- data.table::fread(temp_file)
+  ignore_file <- file.remove(temp_file)
+  data <- data[,-c(2,4)]
+
+  return(data)
 }
 
 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/GetCDLImage.R
 \name{GetCDLImage}
 \alias{GetCDLImage}
-\title{Request for images of the CDL raster data}
+\title{Request images of the CDL data}
 \usage{
 GetCDLImage(
   aoi = NULL,
@@ -16,23 +16,21 @@ GetCDLImage(
 )
 }
 \arguments{
-\item{aoi}{Area of interest. Could be a 5-digit FIPS code of a county, three coordinates that defines a triangle,
-or four corner points that defines a rectangle (or a box), or a single coordinate. The default coordinate system used by CDL is a projected
-coordinate system called Albers projection (or Albers equal-area conic projection). Users could specify coordinates based on a
-different coordinate system (defined by the \code{crs} argument), including the geographic coordinate system such as latitude-longitude.}
+\item{aoi}{Area of interest. Can be a 5-digit FIPS code of a county, four corner points that defines a rectangle (or a box) area,
+multiple coordinates that defines a polygon, or a URL of an compressed ESRI shapefile.}
 
 \item{year}{Year of data. Should be a 4-digit numerical value.}
 
-\item{type}{Type of AOI. 'f' for county, 'ps' for triangle with multiple coordinates, 'b' for box with four corner points, 'p' for a single coordinate.}
+\item{type}{Type of the selected AOI. 'f' for county, 'b' for box area, 'ps' for polygon, 's' for ESRI shapefile.}
 
 \item{format}{Format of the image file. Can be png or kml.}
 
-\item{crs}{Coordinate system. NULL if use the default coordinate system (e.g., Albers projection); Use '+init=epsg:4326' for longitude/latitude.}
+\item{crs}{Coordinate system. \code{NULL} if use the default coordinate system (i.e., Albers projection); Use '+init=epsg:4326' for longitude/latitude.}
 
 \item{destfile}{A character string that specifies the directory to save the downloaded image file (e.g., 'C:/image.png'). Note that
-the name of the image should be specified as well. If not specified, the function will creater a temporary folder to save the image file.}
+the name of the image file should be specified as well. If not providing \code{destfile}, the function will create a temporary folder to save the image file.}
 
-\item{verbose}{TRUE/FALSE. Display the directory saving the file or not.}
+\item{verbose}{\code{TRUE}/\code{FALSE}. Display the directory saving the file or not.}
 
 \item{tol_time}{Number of seconds to wait for a response until giving up. Default is 20 seconds.}
 }
@@ -40,6 +38,10 @@ the name of the image should be specified as well. If not specified, the functio
 The function downloads an image file in png or kml format to users' computer. This function is different to \code{GetCDLData} that returns a raster TIF file.
 }
 \description{
-A function that makes HTTP GET requests for the CDL raster data for an area of interests in a given crop year.
+A function that requests images of the CDL data for an area of interests in a given year from the CropScape.
 This function implements the GetCDLImage service provided by the CropScape \url{https://nassgeodata.gmu.edu/CropScape}.
+}
+\details{
+The usage of this function is similar to the \code{GetCDLData} function. Please see the help page of the \code{GetCDLData} function
+for details. Note that the \code{aoi} cannot be a single point here.
 }

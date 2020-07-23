@@ -2,7 +2,7 @@
 % Please edit documentation in R/manualrotate.R
 \name{manualrotate}
 \alias{manualrotate}
-\title{Calculate for land use changes}
+\title{Manual calculation of land cover changes}
 \usage{
 manualrotate(datat1, datat2)
 }
@@ -12,12 +12,13 @@ manualrotate(datat1, datat2)
 \item{datat2}{A raster file.}
 }
 \value{
-The function returns a data table.
+The function returns a data frame.
 }
 \description{
-The \code{manualrotate} function analyzes land use changes based on two raster files. The analysis is done in three steps. At step 1, the two raster files are
-converted to data tables. At step 2, the two data tables are merged together based on their coordinates. The coordinates without macthes are discarded during the
-merging process. At step 3, the data are aggregated by counting the number of pixels for each land change group.
+The \code{manualrotate} function analyzes land cover changes based on two raster files from the CropScape. The analysis is done in three steps.
+ At step 1, the two raster files are converted to data tables. At step 2, the two data tables are merged together based on their coordinates.
+ The coordinates without macthes are discarded during the merging process.
+ At step 3, the merged data are aggregated by counting the number of pixels for each land cover change group.
 }
 \examples{
 \donttest{
