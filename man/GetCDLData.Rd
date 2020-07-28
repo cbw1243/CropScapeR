@@ -11,7 +11,8 @@ GetCDLData(
   mat = FALSE,
   crs = NULL,
   tol_time = 20,
-  save_path = NULL
+  save_path = NULL,
+  readr = TRUE
 )
 }
 \arguments{
@@ -29,7 +30,9 @@ multiple coordinates that defines a polygon, a single coordinate that defines a 
 \item{tol_time}{Number of seconds to wait for a response until giving up. Default is 20 seconds.}
 
 \item{save_path}{Path (including the file name with the suffix: '.tif') to save the TIF file.
-If a path is provided, the TIF file will be saved in the computer in the specified directory. Default: \code{NULL}}
+If a path is provided, the TIF file will be saved in the computer in the specified directory. Default: \code{NULL}.}
+
+\item{readr}{Read the raster data into R. Default is \code{TRUE}. If \code{FALSE}, only the tif file is saved at \code{save_path}.}
 }
 \value{
 The function returns a raster object or a data frame that records the requested CDL data.
@@ -44,8 +47,11 @@ from the \code{httr} package. Second, the function reads the requested data into
 returned from the CropScape are in the raster-based GeoTIFF file format. Users can choose to save the raw data in TIF format into their local drives.
 
 Users should at least specify \code{aoi}, \code{year}, and \code{type} to make valid data requests. \code{aoi} represents area of interest, and it refers to the
-area to make data request. An \code{aoi} can be a county defined by a 5-digit FIPS code, a box defined by four corner points,
-a polygon defined by multiple coordinates, a single point defined by a coordinate, or a custom area defined by an ESRI shapefile.
+area to make data request. An \code{aoi} can be a state/county defined by a 2-digit/5-digit FIPS code, a box defined by four corner points,
+a polygon defined by multiple coordinates, a single point defined by a coordinate, or a custom area defined by an ESRI shapefile. For box type \code{aoi}, users can also
+use a sf object as an \code{aoi}. In this case, the \code{GetCDLData} will automatically extract bounding box points from the sf object and then make data request. The sf object
+must contain the crs information.
+
 
 If the type of \code{aoi} is a box, users should specify \code{aoi} as a numeric vector with four elements that represent corner points of the box.
 The format of the box should be (minimum x, minimum y, maximum x, maximum y). For example, if latitude/longitude is used, users should specify the \code{aoi} as
@@ -79,7 +85,7 @@ Yet, be noted that \code{linkdata} saved in this package is not frequently updat
 }
 \examples{
 \donttest{
-# Example. Retrieve data for the Champaign county in Illinois (FIPS = 17109) in 2018.
+# Example. Retrieve data for the Champaign county in Illinois (FIPS: 17109) in 2018.
 data <- GetCDLData(aoi = 17019, year = 2018, type = 'f')
 raster::plot(data) # plot the data.
 
@@ -88,12 +94,24 @@ raster::plot(data) # plot the data.
 data <- GetCDLData(aoi = 17019, year = 2018, type = 'f', save_path = tempfile(fileext = '.tif'))
 raster::plot(data) # plot the data.
 
-# Example. Retrieve data for a single point by long/lat in 2018.
-data <- GetCDLData(aoi = c(-94.6754,42.1197), year = 2018, type = 'p', crs = '+init=epsg:4326')
-data
-# Below uses the same point, but under the default coordinate system
-data <- GetCDLData(aoi = c(108777,2125055), year = 2018, type = 'p')
-data
+# Example. Retrieve data for the state of Delaware (fips: 44) in 2018.
+data <- GetCDLData(aoi = 44, year = 2018, type = 'f')
+raster::plot(data) # plot the data.
+
+# Example. Retrieve data for a box area defined by four corner points (long/lat)
+data <- GetCDLData(aoi = c(-88.2, 40.03, -88.1, 40.1), year = '2018', type = 'b',
+crs = '+init=epsg:4326')
+raster::plot(data)
+
+# Example. Retrieve data for a box area from a sf object.
+# Extract coordinates for the Champaign county using the us_map function.
+counties_df <- usmap::us_map(regions = "counties", include = 17019)
+# Specify projection system used in the us_map function.
+crs <- '+proj=laea +lat_0=45 +lon_0=-100 +x_0=0 +y_0=0 +a=6370997 +b=6370997 +units=m +no_defs'
+# Create a sf object
+test_sf <- sf::st_as_sf(counties_df, coords = c('x', 'y'), crs = crs)
+# Get CDL data
+data <- GetCDLData(aoi = test_sf, year = 2018, type = 'b')
 
 # Example. Retrieve data for a polygon (triangle) area defined by three coordinates in 2018.
 data <- GetCDLData(aoi = c(175207,2219600,175207,2235525,213693,2219600), year = 2018, type = 'ps')
@@ -103,10 +121,12 @@ raster::plot(data)
 data <- GetCDLData(aoi = c(130783,2203171,153923,2217961), year = '2018', type = 'b')
 raster::plot(data)
 
-# Example. Retrieve data for a box area defined by four corner points (long/lat)
-data <- GetCDLData(aoi = c(-88.2, 40.03, -88.1, 40.1), year = '2018', type = 'b',
-crs = '+init=epsg:4326')
-raster::plot(data)
+# Example. Retrieve data for a single point by long/lat in 2018.
+data <- GetCDLData(aoi = c(-94.6754,42.1197), year = 2018, type = 'p', crs = '+init=epsg:4326')
+data
+# Below uses the same point, but under the default coordinate system
+data <- GetCDLData(aoi = c(108777,2125055), year = 2018, type = 'p')
+data
 }
 
 }

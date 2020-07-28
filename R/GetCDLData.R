@@ -8,8 +8,11 @@
 #' returned from the CropScape are in the raster-based GeoTIFF file format. Users can choose to save the raw data in TIF format into their local drives.
 #'
 #' Users should at least specify \code{aoi}, \code{year}, and \code{type} to make valid data requests. \code{aoi} represents area of interest, and it refers to the
-#' area to make data request. An \code{aoi} can be a county defined by a 5-digit FIPS code, a box defined by four corner points,
-#' a polygon defined by multiple coordinates, a single point defined by a coordinate, or a custom area defined by an ESRI shapefile.
+#' area to make data request. An \code{aoi} can be a state/county defined by a 2-digit/5-digit FIPS code, a box defined by four corner points,
+#' a polygon defined by multiple coordinates, a single point defined by a coordinate, or a custom area defined by an ESRI shapefile. For box type \code{aoi}, users can also
+#' use a sf object as an \code{aoi}. In this case, the \code{GetCDLData} will automatically extract bounding box points from the sf object and then make data request. The sf object
+#' must contain the crs information.
+#'
 #'
 #' If the type of \code{aoi} is a box, users should specify \code{aoi} as a numeric vector with four elements that represent corner points of the box.
 #' The format of the box should be (minimum x, minimum y, maximum x, maximum y). For example, if latitude/longitude is used, users should specify the \code{aoi} as
@@ -49,7 +52,8 @@
 #' @param crs Coordinate system. \code{NULL} if use the default coordinate system (i.e., Albers projection); Use '+init=epsg:4326' for longitude/latitude.
 #' @param tol_time Number of seconds to wait for a response until giving up. Default is 20 seconds.
 #' @param save_path Path (including the file name with the suffix: '.tif') to save the TIF file.
-#' If a path is provided, the TIF file will be saved in the computer in the specified directory. Default: \code{NULL}
+#' If a path is provided, the TIF file will be saved in the computer in the specified directory. Default: \code{NULL}.
+#' @param readr Read the raster data into R. Default is \code{TRUE}. If \code{FALSE}, only the tif file is saved at \code{save_path}.
 #'
 #' @return
 #' The function returns a raster object or a data frame that records the requested CDL data.
@@ -58,7 +62,7 @@
 #'
 #' @examples
 #' \donttest{
-#' # Example. Retrieve data for the Champaign county in Illinois (FIPS = 17109) in 2018.
+#' # Example. Retrieve data for the Champaign county in Illinois (FIPS: 17109) in 2018.
 #' data <- GetCDLData(aoi = 17019, year = 2018, type = 'f')
 #' raster::plot(data) # plot the data.
 #'
@@ -67,12 +71,24 @@
 #' data <- GetCDLData(aoi = 17019, year = 2018, type = 'f', save_path = tempfile(fileext = '.tif'))
 #' raster::plot(data) # plot the data.
 #'
-#' # Example. Retrieve data for a single point by long/lat in 2018.
-#' data <- GetCDLData(aoi = c(-94.6754,42.1197), year = 2018, type = 'p', crs = '+init=epsg:4326')
-#' data
-#' # Below uses the same point, but under the default coordinate system
-#' data <- GetCDLData(aoi = c(108777,2125055), year = 2018, type = 'p')
-#' data
+#' # Example. Retrieve data for the state of Delaware (fips: 44) in 2018.
+#' data <- GetCDLData(aoi = 44, year = 2018, type = 'f')
+#' raster::plot(data) # plot the data.
+#'
+#' # Example. Retrieve data for a box area defined by four corner points (long/lat)
+#' data <- GetCDLData(aoi = c(-88.2, 40.03, -88.1, 40.1), year = '2018', type = 'b',
+#' crs = '+init=epsg:4326')
+#' raster::plot(data)
+#'
+#' # Example. Retrieve data for a box area from a sf object.
+#' # Extract coordinates for the Champaign county using the us_map function.
+#' counties_df <- usmap::us_map(regions = "counties", include = 17019)
+#' # Specify projection system used in the us_map function.
+#' crs <- '+proj=laea +lat_0=45 +lon_0=-100 +x_0=0 +y_0=0 +a=6370997 +b=6370997 +units=m +no_defs'
+#' # Create a sf object
+#' test_sf <- sf::st_as_sf(counties_df, coords = c('x', 'y'), crs = crs)
+#' # Get CDL data
+#' data <- GetCDLData(aoi = test_sf, year = 2018, type = 'b')
 #'
 #' # Example. Retrieve data for a polygon (triangle) area defined by three coordinates in 2018.
 #' data <- GetCDLData(aoi = c(175207,2219600,175207,2235525,213693,2219600), year = 2018, type = 'ps')
@@ -82,65 +98,85 @@
 #' data <- GetCDLData(aoi = c(130783,2203171,153923,2217961), year = '2018', type = 'b')
 #' raster::plot(data)
 #'
-#' # Example. Retrieve data for a box area defined by four corner points (long/lat)
-#' data <- GetCDLData(aoi = c(-88.2, 40.03, -88.1, 40.1), year = '2018', type = 'b',
-#' crs = '+init=epsg:4326')
-#' raster::plot(data)
+#' # Example. Retrieve data for a single point by long/lat in 2018.
+#' data <- GetCDLData(aoi = c(-94.6754,42.1197), year = 2018, type = 'p', crs = '+init=epsg:4326')
+#' data
+#' # Below uses the same point, but under the default coordinate system
+#' data <- GetCDLData(aoi = c(108777,2125055), year = 2018, type = 'p')
+#' data
 #'}
 #'
-GetCDLData <- function(aoi = NULL, year = NULL, type = NULL, mat = FALSE, crs = NULL, tol_time = 20, save_path = NULL){
+GetCDLData <- function(aoi = NULL, year = NULL, type = NULL, mat = FALSE, crs = NULL, tol_time = 20, save_path = NULL, readr = TRUE){
+
   targetCRS <- "+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
+
+  if(is.null(aoi)) stop('aoi must be provided. See details. \n')
+
+  if(is.null(year)) stop('year must be provided. See details. \n')
+
+  if(is.null(type)) stop('type must be provided. See details. \n')
+
   if(!is.null(save_path)){
     if(substr(save_path, nchar(save_path)-3, nchar(save_path)) != '.tif') stop('The save_path should end with .tif \n')
   }
 
   if(!type %in% c('f', 'ps', 'b', 'p', 's')) stop('Invalid type value. See details. \n')
 
+  if(!isTRUE(readr) & is.null(save_path)) stop('Either provide save_path to save the data, or let readr = TRUE to read the data into R. \n')
+
+  if(!isTRUE(readr) & isTRUE(mat)) stop('Cannot return a data table if not read the data into R. Use readr = TRUE. \n')
+
   if(type == 'f'){
-    data <- GetCDLDataF(fips = aoi, year = year, tol_time = tol_time, save_path = save_path)
+    data <- GetCDLDataF(fips = aoi, year = year, tol_time = tol_time, save_path = save_path, readr = readr)
   }
 
   if(type == 's'){
     if(!is.null(crs)) stop('The coordinate system must be the Albers projection system. \n')
-    data <- GetCDLDataS(poly = aoi, year = year, tol_time = tol_time, save_path = save_path)
+    data <- GetCDLDataS(poly = aoi, year = year, tol_time = tol_time, save_path = save_path, readr = readr)
   }
 
   if(type == 'ps'){
     if(length(aoi) < 6) stop('The aoi must be a numerical vector with at least 6 elements. \n')
-    if(!is.null(crs)){
-      numps <- length(aoi) # Number of points
-      oldpoints <- sp::SpatialPoints(cbind(aoi[seq(1, numps, by = 2)], aoi[seq(2, numps, by = 2)]), sp::CRS(crs))
-      newpoints <- sp::spTransform(oldpoints, targetCRS)
-      aoi <- paste0(as.vector(t(newpoints@coords)), collapse = ',')
-    }
-    data <- GetCDLDataPs(points = aoi, year = year, tol_time = tol_time, save_path = save_path)
+
+    if(!is.null(crs)){ aoi <- convert_crs(aoi, crs)}
+
+    data <- GetCDLDataPs(points = aoi, year = year, tol_time = tol_time, save_path = save_path, readr = readr)
   }
 
   if(type == 'b'){
-    if(length(aoi) != 4) stop('The aoi must be a numerical vector with 4 elements. \n')
-    if(!is.null(crs)){
-      numps <- length(aoi) # Number of points
-      oldpoints <- sp::SpatialPoints(cbind(aoi[seq(1, numps, by = 2)], aoi[seq(2, numps, by = 2)]), sp::CRS(crs))
-      newpoints <- sp::spTransform(oldpoints, targetCRS)
-      aoi <- paste0(as.vector(t(newpoints@coords)), collapse = ',')
+    if (!is.numeric(aoi)) {
+      if (!(class(aoi)[1] == "sf" | class(aoi)[2] == "sfc")) stop('aoi must be a numerical vector or a sf object. \n')
+      if(is.na(sf::st_crs(aoi))) stop('The sf object for aoi does not contain crs. \n')
+      aoi_crs <- sf::st_crs(aoi)[[2]]
+
+      if(aoi_crs != targetCRS){aoi <- sf::st_transform(aoi, targetCRS)}
+
+      data <- GetCDLDataB(box = sf::st_bbox(aoi), year = year, tol_time = tol_time, save_path = save_path, readr = readr)
+    }else{
+      if(length(aoi) != 4) stop('The aoi must be a numerical vector with 4 elements. \n')
+      if(!is.null(crs)){
+        aoi <- convert_crs(aoi, crs)
+        }
+      data <- GetCDLDataB(box = aoi, year = year, tol_time = tol_time, save_path = save_path, readr = readr)
     }
-    data <- GetCDLDataB(box = aoi, year = year, tol_time = tol_time, save_path = save_path)
   }
 
   if(type == 'p'){
-    if(!is.null(crs)){
-      oldpoints <- sp::SpatialPoints(cbind(aoi[1], aoi[2]), sp::CRS(crs))
-      newpoints <- sp::spTransform(oldpoints, targetCRS)
-      aoi <- unlist(newpoints@coords)
-    }
+    if(!is.null(crs)){ aoi <- convert_crs(aoi, crs)}
+
+    if(isTRUE(mat)) warning('Request for a point type aoi is already a data frame. \n')
+    if(!is.null(save_path)) warning('Data for a single point cannot be saved as tif file. \n')
+    if(!isTRUE(readr)) warning('Data are read into R. \n')
+
     data <- GetCDLDataP(point = aoi, year = year, tol_time = tol_time)
   }
 
-  if(isTRUE(mat) & type %in% c('f', 'ps', 'b', 'poly')){
+  if(isTRUE(readr) & isTRUE(mat) & type %in% c('f', 'ps', 'b', 's')){
     data <- raster::rasterToPoints(data)
     data <- data.table::as.data.table(data)
     data.table::setnames(data, c('x', 'y', 'value'))
   }
+
   return(data)
 }
 

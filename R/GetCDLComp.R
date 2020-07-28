@@ -56,7 +56,14 @@
 GetCDLComp <- function(aoi, year1, year2, type, mat = TRUE, crs = NULL, tol_time = 20, manual_try = TRUE){
   targetCRS <- "+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
 
+  if(is.null(aoi)) stop('aoi must be provided. See details. \n')
+
+  if(is.null(year1) | is.null(year2)) stop('year1 and year2 must be provided. See details. \n')
+
+  if(is.null(type)) stop('type must be provided. See details. \n')
+
   if(!type %in% c('f', 'ps', 'b', 'p', 's')) stop('Invalid type value. See details. \n')
+  if(type == 'p') stop('Cannot request statistics for a single point. \n')
 
   if(type == 'f'){
     data <- GetCDLCompF(fips = aoi, year1 = year1, year2 = year2, mat = mat, tol_time = tol_time, manual_try = manual_try)
@@ -69,24 +76,24 @@ GetCDLComp <- function(aoi, year1, year2, type, mat = TRUE, crs = NULL, tol_time
 
   if(type == 'ps'){
     if(length(aoi) < 6) stop('The aoi must be a numerical vector with at least 6 elements. \n')
-    if(!is.null(crs)){
-      numps <- length(aoi) # Number of points
-      oldpoints <- sp::SpatialPoints(cbind(aoi[seq(1, numps, by = 2)], aoi[seq(2, numps, by = 2)]), sp::CRS(crs))
-      newpoints <- sp::spTransform(oldpoints, targetCRS)
-      aoi <- paste0(as.vector(t(newpoints@coords)), collapse = ',')
-    }
+    if(!is.null(crs)){ aoi <- convert_crs(aoi, crs)}
     data <- GetCDLCompPs(points = aoi, year1 = year1, year2 = year2, mat = mat, tol_time = tol_time, manual_try = manual_try)
   }
 
   if(type == 'b'){
-    if(length(aoi) != 4) stop('The aoi must be a numerical vector with 4 elements. \n')
-    if(!is.null(crs)){
-      numps <- length(aoi) # Number of points
-      oldpoints <- sp::SpatialPoints(cbind(aoi[seq(1, numps, by = 2)], aoi[seq(2, numps, by = 2)]), sp::CRS(crs))
-      newpoints <- sp::spTransform(oldpoints, targetCRS)
-      aoi <- paste0(as.vector(t(newpoints@coords)), collapse = ',')
+    if (!is.numeric(aoi)) {
+      if (!(class(aoi)[1] == "sf" | class(aoi)[2] == "sfc")) stop('aoi must be a numerical vector or a sf object. \n')
+      if(is.na(sf::st_crs(aoi))) stop('The sf object for aoi does not contain crs. \n')
+      aoi_crs <- sf::st_crs(aoi)[[2]]
+
+      if(aoi_crs != targetCRS){aoi <- sf::st_transform(aoi, targetCRS)}
+
+      data <- GetCDLCompB(box = sf::st_bbox(aoi), year1 = year1, year2 = year2, tol_time = tol_time, manual_try = manual_try)
+    }else{
+      if(length(aoi) != 4) stop('The aoi must be a numerical vector with 4 elements. \n')
+      if(!is.null(crs)){ aoi <- convert_crs(aoi, crs)}
+      data <- GetCDLCompB(box = aoi, year1 = year1, year2 = year2, mat = mat, tol_time = tol_time, manual_try = manual_try)
     }
-    data <- GetCDLCompB(box = aoi, year1 = year1, year2 = year2, mat = mat, tol_time = tol_time, manual_try = manual_try)
   }
   return(data)
 }

@@ -36,6 +36,14 @@
 GetCDLStat <- function(aoi = NULL, year = NULL, type = NULL, crs = NULL, tol_time = 20){
   targetCRS <- "+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
 
+  if(is.null(aoi)) stop('aoi must be provided. See details. \n')
+
+  if(is.null(year)) stop('year must be provided. See details. \n')
+
+  if(is.null(type)) stop('type must be provided. See details. \n')
+
+  if(type == 'p') stop('Cannot request statistics for a single point. \n')
+
   if(!type %in% c('f', 'ps', 'b', 's')) stop('Invalid type value. See details. \n')
 
   if(type == 'f'){
@@ -49,24 +57,24 @@ GetCDLStat <- function(aoi = NULL, year = NULL, type = NULL, crs = NULL, tol_tim
 
   if(type == 'ps'){
     if(length(aoi) < 6) stop('The aoi must be a numerical vector with at least 6 elements. \n')
-    if(!is.null(crs)){
-      numps <- length(aoi) # Number of points
-      oldpoints <- sp::SpatialPoints(cbind(aoi[seq(1, numps, by = 2)], aoi[seq(2, numps, by = 2)]), sp::CRS(crs))
-      newpoints <- sp::spTransform(oldpoints, targetCRS)
-      aoi <- paste0(as.vector(t(newpoints@coords)), collapse = ',')
-    }
+    if(!is.null(crs)){ aoi <- convert_crs(aoi, crs)}
     data <- GetCDLStatPs(points = aoi, year = year, tol_time = tol_time)
   }
 
   if(type == 'b'){
-    if(length(aoi) != 4) stop('The aoi must be a numerical vector with 4 elements. \n')
-    if(!is.null(crs)){
-      numps <- length(aoi) # Number of points
-      oldpoints <- sp::SpatialPoints(cbind(aoi[seq(1, numps, by = 2)], aoi[seq(2, numps, by = 2)]), sp::CRS(crs))
-      newpoints <- sp::spTransform(oldpoints, targetCRS)
-      aoi <- paste0(as.vector(t(newpoints@coords)), collapse = ',')
+    if (!is.numeric(aoi)) {
+      if (!(class(aoi)[1] == "sf" | class(aoi)[2] == "sfc")) stop('aoi must be a numerical vector or a sf object. \n')
+      if(is.na(sf::st_crs(aoi))) stop('The sf object for aoi does not contain crs. \n')
+      aoi_crs <- sf::st_crs(aoi)[[2]]
+
+      if(aoi_crs != targetCRS){aoi <- sf::st_transform(aoi, targetCRS)}
+
+      data <- GetCDLStatB(box = sf::st_bbox(aoi), year = year, tol_time = tol_time)
+    }else{
+      if(length(aoi) != 4) stop('The aoi must be a numerical vector with 4 elements. \n')
+      if(!is.null(crs)){ aoi <- convert_crs(aoi, crs)}
+      data <- GetCDLStatB(box = aoi, year = year, tol_time = tol_time)
     }
-    data <- GetCDLStatB(box = aoi, year = year, tol_time = tol_time)
   }
   return(data)
 }

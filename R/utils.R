@@ -1,4 +1,14 @@
-GetCDLDataS <- function(poly, year, tol_time, save_path){
+convert_crs <- function(aoi, crs){
+  targetCRS <- "+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
+  numps <- length(aoi)
+  aoi_dat <- data.frame(x = aoi[seq(1, numps, by = 2)], y = aoi[seq(2, numps, by = 2)])
+  aoi_sf <- sf::st_as_sf(aoi_dat, coords = c('x', 'y'), crs = crs)
+  aoi_sf_trans <- sf::st_transform(aoi_sf, targetCRS)
+  out <- paste0(as.vector(t(sf::st_coordinates(aoi_sf_trans))), collapse = ',')
+  return(out)
+}
+
+GetCDLDataS <- function(poly, year, tol_time, save_path, readr){
   url <- paste0('https://nassgeodata.gmu.edu/axis2/services/CDLService/GetCDLFile?year=', year, '&aoiURL=', poly)
   data <- tryCatch(httr::GET(url, httr::timeout(tol_time)), error = function(x) x)
 
@@ -11,9 +21,13 @@ GetCDLDataS <- function(poly, year, tol_time, save_path){
   url2 <- substr(dataX, num[[1]][1]+10, num[[1]][2]-3)
 
   if(!is.null(save_path)){
-    message(paste0('Data is saved at:', save_path))
     file_info <- httr::GET(url2, httr::write_disk(path = save_path, overwrite = T))
-    outdata <- raster::raster(save_path)
+    message(paste0('Data is saved at:', save_path))
+    if(isTRUE(readr)){
+      outdata <- raster::raster(save_path)
+    }else{
+      outdata <- NULL
+    }
   }else{
     outdata <- raster::raster(url2)
   }
@@ -21,7 +35,7 @@ GetCDLDataS <- function(poly, year, tol_time, save_path){
 }
 
 
-GetCDLDataF <- function(fips, year, tol_time, save_path){
+GetCDLDataF <- function(fips, year, tol_time, save_path, readr){
   url <- paste0('https://nassgeodata.gmu.edu/axis2/services/CDLService/GetCDLFile?year=', year, '&fips=', fips)
   data <- tryCatch(httr::GET(url, httr::timeout(tol_time)), error = function(x) x)
 
@@ -31,10 +45,15 @@ GetCDLDataF <- function(fips, year, tol_time, save_path){
   url2 <- substr(dataX, num[[1]][1]+10, num[[1]][2]-3)
 
   if(!is.null(save_path)){
-    message(paste0('Data is saved at:', save_path))
     file_info <- httr::GET(url2, httr::write_disk(path = save_path, overwrite = T))
-    outdata <- raster::raster(save_path)
+    message(paste0('Data is saved at:', save_path))
+    if(isTRUE(readr)){
+      outdata <- raster::raster(save_path)
+    }else{
+      outdata <- NULL
+    }
   }else{
+    if(!isTRUE(readr)) warning('readr focred to be TRUE, because no save_path is provided. \n')
     outdata <- raster::raster(url2)
    }
   return(outdata)
@@ -59,11 +78,12 @@ GetCDLDataP <- function(point, year, tol_time){
     x <- gsub("\"","",x)
     x <- trimws(x)
   })
+  out <- base::as.data.frame(out)
   return(out)
 }
 
 
-GetCDLDataPs <- function(points, year, tol_time, save_path){
+GetCDLDataPs <- function(points, year, tol_time, save_path, readr){
   points <- paste0(points, collapse = ',')
   url <- paste0('https://nassgeodata.gmu.edu/axis2/services/CDLService/GetCDLFile?year=',
                 year, '&points=', points)
@@ -76,17 +96,22 @@ GetCDLDataPs <- function(points, year, tol_time, save_path){
   url2 <- substr(url2X, num[1]+10, num[2]-3)
 
   if(!is.null(save_path)){
-    message(paste0('Data is saved at:', save_path))
     file_info <- httr::GET(url2, httr::write_disk(path = save_path, overwrite = T))
-    outdata <- raster::raster(save_path)
+    message(paste0('Data is saved at:', save_path))
+    if(isTRUE(readr)){
+      outdata <- raster::raster(save_path)
+    }else{
+      outdata <- NULL
+    }
   }else{
+    if(!isTRUE(readr)) warning('readr focred to be TRUE, because no save_path is provided. \n')
     outdata <- raster::raster(url2)
   }
   return(outdata)
 }
 
 
-GetCDLDataB <- function(box, year, tol_time, save_path){
+GetCDLDataB <- function(box, year, tol_time, save_path, readr){
   box <- paste0(box, collapse = ',')
   url <- paste0('https://nassgeodata.gmu.edu/axis2/services/CDLService/GetCDLFile?year=', year, '&bbox=', box)
 
@@ -100,8 +125,13 @@ GetCDLDataB <- function(box, year, tol_time, save_path){
   if(!is.null(save_path)){
     message(paste0('Data is saved at:', save_path))
     file_info <- httr::GET(url2, httr::write_disk(path = save_path, overwrite = T))
-    outdata <- raster::raster(save_path)
+    if(isTRUE(readr)){
+      outdata <- raster::raster(save_path)
+    }else{
+      outdata <- NULL
+    }
   }else{
+    if(!isTRUE(readr)) warning('readr focred to be TRUE, because no save_path is provided. \n')
     outdata <- raster::raster(url2)
   }
   return(outdata)
