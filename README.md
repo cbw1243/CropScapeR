@@ -26,11 +26,16 @@ The `GetCDLComp` service performs cropland change analysis by comparing the pixe
 ### Key parameters  
 The four functions introduced above take three necessary inputs to work: `aoi`, `year`, `type`. API key is not needed. 
 
-* `aoi`: Area of Interest. An AOI can be a county (defined by county FIPS code), a rectangle/box (defined by four corner points), a polygon (defined by multiple points), a point (defined a single coordinate), or a custom area (defined by an ESRI shapefile provided by users). 
+* `aoi`: Area of Interest. An AOI can be a state (defined by state FIPS code), a county (defined by county FIPS code), a rectangle/box (defined by four corner points), a polygon (defined by multiple points), a point (defined a single coordinate), or a custom area (defined by an ESRI shapefile provided by users). 
 * `year`: a year value.   
 * `type`: Type of the AOI. 'f' for county, 'b' for box area, 'ps' for polygon, 'p' for a single coordinate, 's' for ESRI shapefile.
 
 ### Examples  
+#### Get data for a state   
+```
+# State of Connecticut, FIPS code: 09   
+data <- GetCDLData(aoi = '09', year = 2018, type = 'f')
+```
 #### Get data for a county 
 ```
 # Champaign county in Illinois, FIPS code: 17019
@@ -57,6 +62,18 @@ box <- as.vector(sp::bbox(shape_file_s))
 data <- GetCDLData(aoi = bbox, year = '2018', type = 'b')
 ```
 The above example assumes that the shapefile has the Albers projection system. If not, make sure that you specify the correct system (same to the shapefile) in `crs`. 
+
+The `GetCDLData` can also take a sf object as input and return the data for box area for the sf object.
+```
+# Extract coordinates for the Champaign county using the us_map function.
+counties_df <- usmap::us_map(regions = "counties", include = 17019)
+# Specify projection system used in the us_map function.
+crs <- '+proj=laea +lat_0=45 +lon_0=-100 +x_0=0 +y_0=0 +a=6370997 +b=6370997 +units=m +no_defs'
+# Create a sf object
+test_sf <- sf::st_as_sf(counties_df, coords = c('x', 'y'), crs = crs)
+# Get CDL data
+data <- GetCDLData(aoi = test_sf, year = 2018, type = 'b')
+```
 
 #### Get data for a polygon     
 The AOI should be a numeric vector with at least 6 elements. The format to define the polygon is (x1, y2, x2, y2, ..., xn, yn).  
@@ -119,7 +136,7 @@ Note: `CropScapeR` package depends on the `rgdal` and `sp` packages to process t
 ## Acknowledgement      
 The development of this package was supported by USDA-NRCS Agreement No. NR193A750016C001 through the Cooperative Ecosystem Studies Units network. Any opinions, findings, conclusions, or recommendations expressed are those of the author(s) and do not necessarily reflect the view of the U.S. Department of Agriculture. 
 
-Dr. [Benjamin Gramig](https://www.bengramig.com/) is a contributor of this package. I thank Dr. [Taro Mieno](http://taromieno.netlify.com/) for providing useful suggestions. 
+Dr. [Benjamin Gramig](https://www.bengramig.com/) and Dr. [Taro Mieno](http://taromieno.netlify.com/) are contributors of this package. 
 
 
 ## Reference   
