@@ -16,7 +16,7 @@ GetCDLImage(
 )
 }
 \arguments{
-\item{aoi}{Area of interest. Can be a 5-digit FIPS code of a county, four corner points that defines a rectangle (or a box) area,
+\item{aoi}{Area of interest. Can be a 5-digit FIPS code of a county, 2-digit FIPS code of a state, four corner points or an sf object that defines a rectangle (or a box) area,
 multiple coordinates that defines a polygon, or a URL of an compressed ESRI shapefile.}
 
 \item{year}{Year of data. Should be a 4-digit numeric value.}

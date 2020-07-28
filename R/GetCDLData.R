@@ -44,7 +44,7 @@
 #' Alternatively, users can also use \code{data(linkdata)} to get the data directly from this package.
 #' Yet, be noted that \code{linkdata} saved in this package is not frequently updated.
 #'
-#' @param aoi Area of interest. Can be a 5-digit FIPS code of a county, four corner points that defines a rectangle (or a box) area,
+#' @param aoi Area of interest. Can be a 5-digit FIPS code of a county, 2-digit FIPS code of a state, four corner points or an sf object that defines a rectangle (or a box) area,
 #' multiple coordinates that defines a polygon, a single coordinate that defines a point, or a URL of an compressed ESRI shapefile. See details.
 #' @param year Year of data. Should be a 4-digit numeric value.
 #' @param type Type of the selected AOI. 'f' for county, 'b' for box area, 'ps' for polygon, 'p' for a single coordinate, 's' for ESRI shapefile.

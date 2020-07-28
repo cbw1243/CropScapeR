@@ -16,7 +16,7 @@ GetCDLData(
 )
 }
 \arguments{
-\item{aoi}{Area of interest. Can be a 5-digit FIPS code of a county, four corner points that defines a rectangle (or a box) area,
+\item{aoi}{Area of interest. Can be a 5-digit FIPS code of a county, 2-digit FIPS code of a state, four corner points or an sf object that defines a rectangle (or a box) area,
 multiple coordinates that defines a polygon, a single coordinate that defines a point, or a URL of an compressed ESRI shapefile. See details.}
 
 \item{year}{Year of data. Should be a 4-digit numeric value.}
