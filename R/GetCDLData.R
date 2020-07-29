@@ -35,9 +35,9 @@
 #' in \code{save_path}. In this case, \code{GetCDLData} will first save the data and then read the saved data into \code{R} using the \code{raster} function
 #' from the \code{raster} package. For example, when letting \code{save_path} be 'C:/test.tif', the raster TIF file will be saved at the 'C' disk in the name of
 #' 'test.tif'. If \code{save_path} is \code{NULL} (default), the raster TIF file will not be saved but just read into the \code{R} environment through the \code{raster} function.
-#' Forth, users can transform the raster data into tabular data by letting \code{mat} be \code{TRUE}. The transformation is done by using the
-#' \code{as.data.frame} function from the \code{raster} package. The returned object would be a data frame with the coordinates (first two columns) and
-#' numeric codes of the land cover category (third column). The coordinates are centroids of the grid cells.
+#' Forth, users can transform the raster data into a data table by letting \code{format} = 'table' or a sf object by letting \code{format} = 'sf'. The transformation into data table is done by using the
+#' \code{as.data.frame} function from the \code{raster} package. The returned object would be a data table with the coordinates (first two columns) and
+#' numeric codes of the land cover category (third column). The coordinates are centroids of the grid cells. The transformation into 'sf' is based on functions in the 'sf' package.
 #'
 #' The CDL website provides an EXCEL file that links the numeric codes with the land cover names.
 #' Users can download the EXCEL file from this link \url{https://www.nass.usda.gov/Research_and_Science/Cropland/docs/cdl_codes_names.xlsx}.
@@ -48,7 +48,7 @@
 #' multiple coordinates that defines a polygon, a single coordinate that defines a point, or a URL of an compressed ESRI shapefile. See details.
 #' @param year Year of data. Should be a 4-digit numeric value.
 #' @param type Type of the selected AOI. 'f' for county, 'b' for box area, 'ps' for polygon, 'p' for a single coordinate, 's' for ESRI shapefile.
-#' @param mat \code{TRUE}/\code{FALSE}. If \code{TRUE}, return a data frame. If \code{FALSE} (default), return a raster tif file.
+#' @param format Format of the output. 'raster' for raster object, 'table' for a data table, and 'sf' for a sf object.
 #' @param crs Coordinate system. \code{NULL} if use the default coordinate system (i.e., Albers projection); Use '+init=epsg:4326' for longitude/latitude.
 #' @param tol_time Number of seconds to wait for a response until giving up. Default is 20 seconds.
 #' @param save_path Path (including the file name with the suffix: '.tif') to save the TIF file.
@@ -56,7 +56,7 @@
 #' @param readr Read the raster data into R. Default is \code{TRUE}. If \code{FALSE}, only the tif file is saved at \code{save_path}.
 #'
 #' @return
-#' The function returns a raster object or a data frame that records the requested CDL data.
+#' The function returns the requested CDL data for the aoi in a given year. Format of the returned object can be a raster, a data table, or a sf, depending on users' choice.
 #'
 #' @export
 #'
@@ -106,7 +106,7 @@
 #' data
 #'}
 #'
-GetCDLData <- function(aoi = NULL, year = NULL, type = NULL, mat = FALSE, crs = NULL, tol_time = 20, save_path = NULL, readr = TRUE){
+GetCDLData <- function(aoi = NULL, year = NULL, type = NULL, format = 'raster', crs = NULL, tol_time = 20, save_path = NULL, readr = TRUE){
 
   targetCRS <- "+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
 
@@ -116,6 +116,8 @@ GetCDLData <- function(aoi = NULL, year = NULL, type = NULL, mat = FALSE, crs = 
 
   if(is.null(type)) stop('type must be provided. See details. \n')
 
+  if(!format %in% c('raster', 'table', 'sf')) stop('format must be raster, table, or sf. See details. \n')
+
   if(!is.null(save_path)){
     if(substr(save_path, nchar(save_path)-3, nchar(save_path)) != '.tif') stop('The save_path should end with .tif \n')
   }
@@ -124,7 +126,8 @@ GetCDLData <- function(aoi = NULL, year = NULL, type = NULL, mat = FALSE, crs = 
 
   if(!isTRUE(readr) & is.null(save_path)) stop('Either provide save_path to save the data, or let readr = TRUE to read the data into R. \n')
 
-  if(!isTRUE(readr) & isTRUE(mat)) stop('Cannot return a data table if not read the data into R. Use readr = TRUE. \n')
+  if(!isTRUE(readr) & format == 'table') stop('Cannot return a data table object if not read the data into R. Use readr = TRUE. \n')
+  if(!isTRUE(readr) & format == 'sf') stop('Cannot return a sf object if not read the data into R. Use readr = TRUE. \n')
 
   if(type == 'f'){
     data <- GetCDLDataF(fips = aoi, year = year, tol_time = tol_time, save_path = save_path, readr = readr)
@@ -164,19 +167,23 @@ GetCDLData <- function(aoi = NULL, year = NULL, type = NULL, mat = FALSE, crs = 
   if(type == 'p'){
     if(!is.null(crs)){ aoi <- convert_crs(aoi, crs)}
 
-    if(isTRUE(mat)) warning('Request for a point type aoi is already a data frame. \n')
     if(!is.null(save_path)) warning('Data for a single point cannot be saved as tif file. \n')
     if(!isTRUE(readr)) warning('Data are read into R. \n')
 
     data <- GetCDLDataP(point = aoi, year = year, tol_time = tol_time)
   }
 
-  if(isTRUE(readr) & isTRUE(mat) & type %in% c('f', 'ps', 'b', 's')){
-    data <- raster::rasterToPoints(data)
+  if(isTRUE(readr) & format == 'table' & type %in% c('f', 'ps', 'b', 's')){
+    data <- raster::as.data.frame(data, xy = TRUE)
     data <- data.table::as.data.table(data)
     data.table::setnames(data, c('x', 'y', 'value'))
   }
 
+  if(isTRUE(readr) & format == 'sf' & type %in% c('f', 'ps', 'b', 's')){
+    data <- raster::as.data.frame(data, xy = TRUE) %>%
+      sf::st_as_sf(coords = c("x", "y")) %>%
+      sf::st_set_crs(targetCRS) %>%
+      data.table::setnames(names(.)[1], "value")
+  }
   return(data)
 }
-

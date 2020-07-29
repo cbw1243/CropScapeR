@@ -160,7 +160,7 @@ GetCDLCompS <- function(poly, year1, year2, mat, tol_time, manual_try){
       num <- gregexpr('returnReportURL', dataX)
       url2 <- substr(dataX, num[[1]][1]+16, num[[1]][2]-3)
       temp_file <- tempfile(fileext = '.csv')
-      temp_data <- utils::download.file(url = url2, destfile = temp_file, method = 'wget', quiet = T)
+      temp_data <- utils::download.file(url = url2, destfile = temp_file, method = 'curl', quiet = T, extra = '-k')
       outdata <- data.table::fread(temp_file)
       ignore_file <- file.remove(temp_file)
       if(nrow(outdata) == 0) stop(paste0('Error: The CDL TIF files are likely corrupted.'))
@@ -172,12 +172,12 @@ GetCDLCompS <- function(poly, year1, year2, mat, tol_time, manual_try){
     }
   }else{
     if(isTRUE(dataXtry) & isTRUE(manual_try)){
-      datat1 <- GetCDLData(aoi = poly, year = year1, mat = FALSE, type = 's', tol_time)
-      datat2 <- GetCDLData(aoi = poly, year = year2, mat = FALSE, type = 's', tol_time)
+      datat1 <- GetCDLData(aoi = poly, year = year1, format = 'raster', type = 's', tol_time = tol_time)
+      datat2 <- GetCDLData(aoi = poly, year = year2, format = 'raster', type = 's', tol_time = tol_time)
       outdata <- manualrotate(datat1, datat2)
       if(nrow(outdata) == 0) stop('Warning: CropScape cannot calculate for crop cover changes. Attempted manual calculation, but there is no match between the raster files.\n')
       outdata$aoi <- poly
-      warning(paste0('Warning: CropScape cannot calculate for crop cover changes. The returned data are calculated manually using the manualrotate function.\n Error message from CropScape is :', dataX))
+      warning(paste0('Warning: The returned data are calculated manually using the manualrotate function, because the CropScape server cannot handle the request. \n Error message from CropScape is \n:', dataX))
     }else{
       stop(paste0('Error: The requested data might not exist in the CDL database. \nError message from CropScape is :', dataX))
     }
@@ -205,7 +205,7 @@ GetCDLCompF <- function(fips, year1, year2, mat, tol_time, manual_try){
       num <- gregexpr('returnReportURL', dataX)
       url2 <- substr(dataX, num[[1]][1]+16, num[[1]][2]-3)
       temp_file <- tempfile(fileext = '.csv')
-      temp_data <- utils::download.file(url = url2, destfile = temp_file, method = 'wget', quiet = T)
+      temp_data <- utils::download.file(url = url2, destfile = temp_file, method = 'curl', quiet = T, extra = '-k')
       outdata <- data.table::fread(temp_file)
       ignore_file <- file.remove(temp_file)
       if(nrow(outdata) == 0) stop(paste0('Error: The CDL TIF files are likely corrupted.'))
@@ -217,12 +217,12 @@ GetCDLCompF <- function(fips, year1, year2, mat, tol_time, manual_try){
     }
   }else{
     if(isTRUE(dataXtry) & isTRUE(manual_try)){
-      datat1 <- GetCDLData(aoi = fips, year = year1, mat = FALSE, type = 'f', tol_time)
-      datat2 <- GetCDLData(aoi = fips, year = year2, mat = FALSE, type = 'f', tol_time)
+      datat1 <- GetCDLData(aoi = fips, year = year1, type = 'f', tol_time = tol_time)
+      datat2 <- GetCDLData(aoi = fips, year = year2, type = 'f', tol_time = tol_time)
       outdata <- manualrotate(datat1, datat2)
       if(nrow(outdata) == 0) stop('Warning: CropScape cannot calculate for crop cover changes. Attempted manual calculation, but there is no match between the raster files.\n')
       outdata$aoi <- fips
-      warning(paste0('Warning: CropScape cannot calculate for crop cover changes. The returned data are calculated manually using the manualrotate function.\n Error message from CropScape is :', dataX))
+      warning(paste0('Warning: The returned data are calculated manually using the manualrotate function, because the CropScape server cannot handle the request. \n Error message from CropScape is \n:', dataX))
     }else{
       stop(paste0('Error: The requested data might not exist in the CDL database. \nError message from CropScape is :', dataX))
     }
@@ -265,12 +265,12 @@ GetCDLCompB <- function(box, year1, year2, mat, tol_time, manual_try){
     }
   }else{
     if(isTRUE(dataXtry) & isTRUE(manual_try)){
-      datat1 <- GetCDLData(aoi = box, year = year1, mat = FALSE, type = 'b', tol_time)
-      datat2 <- GetCDLData(aoi = box, year = year2, mat = FALSE, type = 'b', tol_time)
+      datat1 <- GetCDLData(aoi = box, year = year1, type = 'b', tol_time = tol_time)
+      datat2 <- GetCDLData(aoi = box, year = year2, type = 'b', tol_time = tol_time)
       outdata <- manualrotate(datat1, datat2)
       if(nrow(outdata) == 0) stop('Warning: CropScape cannot calculate for crop cover changes. Attempted manual calculation, but there is no match between the raster files.\n')
       outdata$aoi <- box
-      warning(paste0('Warning: CropScape cannot calculate for crop cover changes. The returned data are calculated manually using the manualrotate function.\n Error message from CropScape is :', dataX))
+      warning(paste0('Warning: The returned data are calculated manually using the manualrotate function, because the CropScape server cannot handle the request. \n Error message from CropScape is \n:', dataX))
     }else{
       stop(paste0('Error: No data is found in the CDL database with the request. \n Error message from CropScape is :', dataX))
     }
@@ -300,7 +300,7 @@ GetCDLCompPs <- function(points, year1, year2, mat, tol_time, manual_try){
       num <- gregexpr('returnReportURL', dataX)
       url2 <- substr(dataX, num[[1]][1]+16, num[[1]][2]-3)
       temp_file <- tempfile(fileext = '.csv')
-      temp_data <- utils::download.file(url = url2, destfile = temp_file, method = 'wget', quiet = T)
+      temp_data <- utils::download.file(url = url2, destfile = temp_file, method = 'curl', quiet = T, extra = '-k')
       outdata <- data.table::fread(temp_file)
       ignore_file <- file.remove(temp_file)
       if(nrow(outdata) == 0) stop(paste0('Error: The CDL TIF files are likely corrupted.'))
@@ -312,12 +312,12 @@ GetCDLCompPs <- function(points, year1, year2, mat, tol_time, manual_try){
     }
   }else{
     if(isTRUE(dataXtry) & isTRUE(manual_try)){
-      datat1 <- GetCDLData(aoi = points, year = year1, mat = FALSE, type = 'ps', tol_time)
-      datat2 <- GetCDLData(aoi = points, year = year2, mat = FALSE, type = 'ps', tol_time)
+      datat1 <- GetCDLData(aoi = points, year = year1, type = 'ps', tol_time = tol_time)
+      datat2 <- GetCDLData(aoi = points, year = year2, type = 'ps', tol_time = tol_time)
       outdata <- manualrotate(datat1, datat2)
       if(nrow(outdata) == 0) stop('Warning: CropScape cannot calculate for crop cover changes. Attempted manual calculation, but there is no match between the raster files.\n')
       outdata$aoi <- points
-      warning(paste0('Warning: CropScape cannot calculate for crop cover changes. The returned data are calculated manually using the manualrotate function.\n Error message from CropScape is :', dataX))
+      warning(paste0('Warning: The returned data are calculated manually using the manualrotate function, because the CropScape server cannot handle the request. \n Error message from CropScape is \n:', dataX))
     }else{
       stop(paste0('Error: The requested data might not exist in the CDL database. \nError message from CropScape is :', dataX))
     }
@@ -344,7 +344,7 @@ GetCDLImageS <- function(poly, year, format, destfile, verbose, tol_time){
 
   if(is.null(destfile)) destfile <- tempfile()
   if(isTRUE(verbose)) message('The ', format, ' file is saved at ', destfile, '\n')
-  utils::download.file(url4, destfile = destfile, mode = 'wb', method = 'wget', quiet = ifelse(isTRUE(verbose), FALSE, TRUE))
+  utils::download.file(url4, destfile = destfile, method = 'curl', quiet = ifelse(isTRUE(verbose), FALSE, TRUE), extra = '-k')
 }
 
 GetCDLImageF <- function(fips, year, format, destfile, verbose, tol_time){
@@ -366,7 +366,7 @@ GetCDLImageF <- function(fips, year, format, destfile, verbose, tol_time){
 
   if(is.null(destfile)) destfile <- tempfile()
   if(isTRUE(verbose)) message('The ', format, ' file is saved at ', destfile, '\n')
-  utils::download.file(url4, destfile = destfile, mode = 'wb', method = 'wget', quiet = ifelse(isTRUE(verbose), FALSE, TRUE))
+  utils::download.file(url4, destfile = destfile, method = 'curl', quiet = ifelse(isTRUE(verbose), FALSE, TRUE), extra = '-k')
 }
 
 GetCDLImageB <- function(box, year, format, destfile, verbose, tol_time){
@@ -388,7 +388,7 @@ GetCDLImageB <- function(box, year, format, destfile, verbose, tol_time){
 
   if(is.null(destfile)) destfile <- tempfile()
   if(isTRUE(verbose)) message('The', format, 'file is saved at ', destfile, '\n')
-  utils::download.file(url4, destfile = destfile, mode = 'wb', method = 'wget', quiet = ifelse(isTRUE(verbose), FALSE, TRUE))
+  utils::download.file(url4, destfile = destfile, method = 'curl', quiet = ifelse(isTRUE(verbose), FALSE, TRUE), extra = '-k')
 }
 
 GetCDLImagePs <- function(points, year, format, destfile, verbose, tol_time){
@@ -411,7 +411,7 @@ GetCDLImagePs <- function(points, year, format, destfile, verbose, tol_time){
 
   if(is.null(destfile)) destfile <- tempfile()
   if(isTRUE(verbose)) message('The', format, 'file is saved at ', destfile, '\n')
-  utils::download.file(url4, destfile = destfile, mode = 'wb', method = 'wget', quiet = ifelse(isTRUE(verbose), FALSE, TRUE))
+  utils::download.file(url4, destfile = destfile, method = 'curl', quiet = ifelse(isTRUE(verbose), FALSE, TRUE), extra = '-k')
 }
 
 GetCDLStatS <- function(poly, year, tol_time){
@@ -425,7 +425,7 @@ GetCDLStatS <- function(poly, year, tol_time){
   url2 <- substr(dataX, num[[1]][1]+10, num[[1]][2]-3)
 
   temp_file <- tempfile(fileext = '.csv')
-  temp_data <- utils::download.file(url = url2, destfile = temp_file, method = 'wget', quiet = T)
+  temp_data <- utils::download.file(url = url2, destfile = temp_file, method = 'curl', quiet = T, extra = '-k')
   data <- data.table::fread(temp_file)
   ignore_file <- file.remove(temp_file)
   data <- data[,-c(2,4)]
@@ -444,7 +444,7 @@ GetCDLStatF <- function(fips, year, tol_time){
   url2 <- substr(dataX, num[[1]][1]+10, num[[1]][2]-3)
 
   temp_file <- tempfile(fileext = '.csv')
-  temp_data <- utils::download.file(url = url2, destfile = temp_file, method = 'wget', quiet = T)
+  temp_data <- utils::download.file(url = url2, destfile = temp_file, method = 'curl', quiet = T, extra = '-k')
   data <- data.table::fread(temp_file)
   ignore_file <- file.remove(temp_file)
   data <- data[,-c(2,4)]
@@ -464,7 +464,7 @@ GetCDLStatPs <- function(points, year, tol_time){
   url2 <- substr(url2X, num[1]+10, num[2]-3)
 
   temp_file <- tempfile(fileext = '.csv')
-  temp_data <- utils::download.file(url = url2, destfile = temp_file, method = 'wget', quiet = T)
+  temp_data <- utils::download.file(url = url2, destfile = temp_file, method = 'curl', quiet = T, extra = '-k')
   data <- data.table::fread(temp_file)
   ignore_file <- file.remove(temp_file)
 

@@ -8,7 +8,7 @@ GetCDLData(
   aoi = NULL,
   year = NULL,
   type = NULL,
-  mat = FALSE,
+  format = "raster",
   crs = NULL,
   tol_time = 20,
   save_path = NULL,
@@ -23,7 +23,7 @@ multiple coordinates that defines a polygon, a single coordinate that defines a 
 
 \item{type}{Type of the selected AOI. 'f' for county, 'b' for box area, 'ps' for polygon, 'p' for a single coordinate, 's' for ESRI shapefile.}
 
-\item{mat}{\code{TRUE}/\code{FALSE}. If \code{TRUE}, return a data frame. If \code{FALSE} (default), return a raster tif file.}
+\item{format}{Format of the output. 'raster' for raster object, 'table' for a data table, and 'sf' for a sf object.}
 
 \item{crs}{Coordinate system. \code{NULL} if use the default coordinate system (i.e., Albers projection); Use '+init=epsg:4326' for longitude/latitude.}
 
@@ -35,7 +35,7 @@ If a path is provided, the TIF file will be saved in the computer in the specifi
 \item{readr}{Read the raster data into R. Default is \code{TRUE}. If \code{FALSE}, only the tif file is saved at \code{save_path}.}
 }
 \value{
-The function returns a raster object or a data frame that records the requested CDL data.
+The function returns the requested CDL data for the aoi in a given year. Format of the returned object can be a raster, a data table, or a sf, depending on users' choice.
 }
 \description{
 A function that requests the CDL data for any Area of Interests (AOI) in a given year from the CropScape.
@@ -74,9 +74,9 @@ Third, users can choose to save the raster TIF file in their local disks when re
 in \code{save_path}. In this case, \code{GetCDLData} will first save the data and then read the saved data into \code{R} using the \code{raster} function
 from the \code{raster} package. For example, when letting \code{save_path} be 'C:/test.tif', the raster TIF file will be saved at the 'C' disk in the name of
 'test.tif'. If \code{save_path} is \code{NULL} (default), the raster TIF file will not be saved but just read into the \code{R} environment through the \code{raster} function.
-Forth, users can transform the raster data into tabular data by letting \code{mat} be \code{TRUE}. The transformation is done by using the
-\code{as.data.frame} function from the \code{raster} package. The returned object would be a data frame with the coordinates (first two columns) and
-numeric codes of the land cover category (third column). The coordinates are centroids of the grid cells.
+Forth, users can transform the raster data into a data table by letting \code{format} = 'table' or a sf object by letting \code{format} = 'sf'. The transformation into data table is done by using the
+\code{as.data.frame} function from the \code{raster} package. The returned object would be a data table with the coordinates (first two columns) and
+numeric codes of the land cover category (third column). The coordinates are centroids of the grid cells. The transformation into 'sf' is based on functions in the 'sf' package.
 
 The CDL website provides an EXCEL file that links the numeric codes with the land cover names.
 Users can download the EXCEL file from this link \url{https://www.nass.usda.gov/Research_and_Science/Cropland/docs/cdl_codes_names.xlsx}.
