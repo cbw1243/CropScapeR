@@ -24,24 +24,29 @@ The `GetCDLComp` service performs cropland change analysis by comparing the pixe
 
 ## Package usage  
 ### Key parameters  
-The four functions introduced above take three necessary inputs to work: `aoi`, `year`, `type`. API key is not needed. 
+The four functions introduced above take three necessary inputs to work: `aoi`, `year`, `type`. An API key is not required. 
 
 * `aoi`: Area of Interest. An AOI can take various shapes. Specifically, it can be:
-  + a state defined by a 2-digit state FIPS code;   
-  + a county defined by a 5-digit county FIPS code; 
-  + a box defined by 4 corner points or a spatial `sf` object;     
-  + a polygon defined by at least 3 coordinates;   
-  + a single point defined by a coordinate;   
-  + a custom area defined by an ESRI shapefile provided by users.   
+  + a state defined by a 2-digit state FIPS code (type = 'f');   
+  + a county defined by a 5-digit county FIPS code (type = 'f'); 
+  + a box defined by 4 corner points or a spatial `sf` object (type = 'b');     
+  + a polygon defined by at least 3 coordinates (type = 'ps');   
+  + a single point defined by a coordinate (type = 'p');   
+  + a custom area defined by an ESRI shapefile provided by users (type = 's').   
 * `year`: a year value.   
-* `type`: Type of the AOI. 'f' for county, 'b' for box area, 'ps' for polygon, 'p' for a single coordinate, 's' for ESRI shapefile.
+* `type`: Type of the AOI. See above. 
 
 ### Examples  
+Here I provide some examples to demonstrate how to use the package based on the `GetCDLData` function. This is probably the most useful function since it acquires data from the `CropScape`. The usage of the other three functions (`GetCDLImage`, `GetCDLStat`, `GetCDLComp`) are similar to the usage of `GetCDLData`. 
+
 #### Get data for a state   
 ```
 # State of Connecticut, FIPS code: 09   
 data <- GetCDLData(aoi = '09', year = 2018, type = 'f')
+# State of Connecticut, FIPS code: 10   
+data <- GetCDLData(aoi = 10, year = 2018, type = 'f')
 ```
+Note: The input of `aoi` shall be a 2-digit state FIPS code. Usually, users can provide a numeric value. In cases that the FIPS code starts with a zero, users can specify the `aoi` as a character.  
 #### Get data for a county 
 ```
 # Champaign county in Illinois, FIPS code: 17019
@@ -52,24 +57,23 @@ The AOI should be a numeric vector with 4 elements. The format to define the box
 ```
 data <- GetCDLData(aoi = c(130783,2203171,153923,2217961), year = 2018, type = 'b')
 ```
-Note that the default coordinate system is the Albers projection system. Users can use longitude/latitude by specifying a coordinate system: 
+Note that the default coordinate system is the Albers projection system. Users can use an alternative coordinate system by specifying it in the `crs` argument. The `GetCDLData` function would convert the points under the specified coordinate system back to the Albers projection system and then make data requests. For example, the following example uses 
+the commonly used longitude/latitude to request data, and the corresponding `crs` is '+init=epsg:4326'. 
 ```
-data <- GetCDLData(aoi = c(130783,2203171,153923,2217961), year = '2018', type = 'b')
+data <- GetCDLData(aoi = c(-88.2, 40.03, -88.1, 40.1), year = '2018', type = 'b', crs = '+init=epsg:4326')
 ```
 If users have a shapefile, users can extract the coordinates of bounding box of the shapefile and then make data request:
 ```
 # Read the shapefile into R
-shape_file <- sf::st_read("Your shapefile. File name ended with .shp")
-# Convert into a Spatial object
-shape_file_s <- as(shape_file, "Spatial") 
-# Get bounding box of this shapefile 
-box <- as.vector(sp::bbox(shape_file_s))
-# Extract data 
-data <- GetCDLData(aoi = bbox, year = '2018', type = 'b')
+spdata <- sf::st_read("Your shapefile. File name ended with .shp")
+# Extract data (Use sf::st_bbox function to extract bounding box points) 
+data <- GetCDLData(aoi = sf::st_bbox(spdata), year = '2018', type = 'b')
+# Only use the data inside the shape
+data_shape <- raster::mask(data, spdata)
 ```
 The above example assumes that the shapefile has the Albers projection system. If not, make sure that you specify the correct system (same to the shapefile) in `crs`. 
 
-The `GetCDLData` can also take a sf object as input and return the data for box area for the sf object.
+The `GetCDLData` function depends on the `sf` package to process the spatial data, and it can take a `sf` object as input. When a `sf` object is used as the `aoi`, the `GetCDLData` function would extract bounding box points from theobject and then request for the data. Here is an example: 
 ```
 # Extract coordinates for the Champaign county using the us_map function.
 counties_df <- usmap::us_map(regions = "counties", include = 17019)
@@ -105,13 +109,14 @@ data <- GetCDLData(aoi = link, year = 2018, type = 's')
 ```
 Because the zipped shapefile is directly sent to CropScape, the `GetCDLData` function cannot convert the coordinate system before sending the request. Therefore, users must ensure that the zipping shapefile has the Albers projection system.  
 
-The usage of the other three functions (`GetCDLImage`, `GetCDLStat`, `GetCDLComp`) are similar to the usage of `GetCDLData`. So, we do not provide more examples here. 
+This kind of request takes relatively more steps. For convenience, users can request data for the custom area defined by a shapefile as a box (type = 'b') and then remove the data outside of the custom area (see examples above). 
+
 
 ## Technical notes   
 ###  SSL certificate   
 The `CropScapeR` package was developed under the Windows system. Some unanticipated technical issues might occur when using the `CropScapeR` package in a Mac operating system. A notable one is the SSL certificate problem. SSL refers to the Secure Sockets Layer, and SSL certificate displays important information for verifying the owner of a website and encrypting web traffic with SSL/TLS for securing connecttion. Several Mac users have reported errors called 'SSL certificate problem: SSL certificate expired'. As the name suggests, this is because CropScape server has an expired certificate, which affects the Mac users. Windows users should not expect this issue. 
 
-With an invalid SSL certificate, the `GetCDLData` function would fail because: (1) it cannot send httr GET request any more; and (2) it cannot read the requested raster TIF data via the `raster` function any more. Here is a two-step workaround of the certificate issue. At step 1, specify in `R` that you want to skip the certificate validation when making the httr GET request. At step 2, download the raster TIF data into your local drive using the `download.file` function with `wget`, and then read the downloaded raster file using the `raster` function. The second step is automatically processed inside the `GetCDLData` function. So you just have to do the first step manually. Below is an example to get the CDL data for the Champaign county in 2018 on a Mac computer.  
+With an invalid SSL certificate, the `GetCDLData` function would fail because: (1) it cannot send httr GET request any more; and (2) it cannot read the requested raster TIF data via the `raster` function any more. Here is a two-step workaround of the certificate issue. At step 1, specify in `R` that you want to skip the certificate validation when making the httr GET request. At step 2, download the raster TIF data into your local drive using the `download.file` function, and then read the downloaded raster file using the `raster` function. The second step is automatically processed inside the `GetCDLData` function. So you just have to do the first step manually. Below is an example to get the CDL data for the Champaign county in 2018 on a Mac computer.  
 
 ```
 # Skip the SSL check
@@ -136,8 +141,12 @@ The development version provides the most recent updates of the package.
 
 Note: `CropScapeR` package depends on the `rgdal` and `sp` packages to process the raster files. 
 
+## Related source   
+Users can see more examples on the usage of the `CropScapeR` package from [section 9.2](https://tmieno2.github.io/R-as-GIS-for-Economists/CropScapeR.html#CropScapeR) in the ['R as GIS for Economists'](https://tmieno2.github.io/R-as-GIS-for-Economists/) book. 
+
 ## Contact   
 [Bowen Chen](https://www.bwchen.com), PhD (bwchen@illinois.edu)
+
 
 ## Acknowledgement      
 The development of this package was supported by USDA-NRCS Agreement No. NR193A750016C001 through the Cooperative Ecosystem Studies Units network. Any opinions, findings, conclusions, or recommendations expressed are those of the author(s) and do not necessarily reflect the view of the U.S. Department of Agriculture. 
@@ -150,5 +159,6 @@ Dr. [Benjamin Gramig](https://www.bengramig.com/) and Dr. [Taro Mieno](http://ta
 [1] Boryan, Claire, Zhengwei Yang, Rick Mueller, and Mike Craig. 2011. Monitoring US Agriculture: The US Department of Agriculture, National Agricultural Statistics Service, Cropland Data Layer Program. *Geocarto International* 26 (5): 341–58. https://doi.org/10.1080/10106049.2011.562309.
 
 [2] Han, Weiguo, Zhengwei Yang, Liping Di, and Richard Mueller. 2012. CropScape: A Web Service Based Application for Exploring and Disseminating US Conterminous Geospatial Cropland Data Products for Decision Support. *Computers and Electronics in Agriculture* 84 (June): 111–23. https://doi.org/10.1016/j.compag.2012.03.005.
+
 
 
