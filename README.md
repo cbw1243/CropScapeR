@@ -26,7 +26,13 @@ The `GetCDLComp` service performs cropland change analysis by comparing the pixe
 ### Key parameters  
 The four functions introduced above take three necessary inputs to work: `aoi`, `year`, `type`. API key is not needed. 
 
-* `aoi`: Area of Interest. An AOI can be a state (defined by state FIPS code), a county (defined by county FIPS code), a rectangle/box (defined by four corner points), a polygon (defined by multiple points), a point (defined a single coordinate), or a custom area (defined by an ESRI shapefile provided by users). 
+* `aoi`: Area of Interest. An AOI can take various shapes. Specifically, it can be:
+  + a state defined by a 2-digit state FIPS code;   
+  + a county defined by a 5-digit county FIPS code; 
+  + a box defined by 4 corner points or a spatial `sf` object;     
+  + a polygon defined by at least 3 coordinates;   
+  + a single point defined by a coordinate;   
+  + a custom area defined by an ESRI shapefile provided by users.   
 * `year`: a year value.   
 * `type`: Type of the AOI. 'f' for county, 'b' for box area, 'ps' for polygon, 'p' for a single coordinate, 's' for ESRI shapefile.
 
