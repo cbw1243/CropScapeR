@@ -140,7 +140,7 @@ devtools::install_github("cbw1243/CropScapeR")
 The development version provides the most recent updates of the package. 
 
 ## Related source   
-Users can see more examples on the usage of the `CropScapeR` package from [section 9.2](https://tmieno2.github.io/R-as-GIS-for-Economists/CropScapeR.html#CropScapeR) in the ['R as GIS for Economists'](https://tmieno2.github.io/R-as-GIS-for-Economists/) book. 
+Please see more advanced uses of the `CropScapeR` package from [section 9.2](https://tmieno2.github.io/R-as-GIS-for-Economists/CropScapeR.html#CropScapeR) in the ['R as GIS for Economists'](https://tmieno2.github.io/R-as-GIS-for-Economists/) book. 
 
 ## Contact   
 [Bowen Chen](https://www.bwchen.com), PhD (bwchen@illinois.edu)
