@@ -9,7 +9,7 @@
 #' @param aoi Area of interest. Can be a 5-digit FIPS code of a county, 2-digit FIPS code of a state, four corner points or an sf object that defines a rectangle (or a box) area,
 #' multiple coordinates that defines a polygon, or a URL of an compressed ESRI shapefile.
 #' @param year  Year of data. Should be a 4-digit numeric value.
-#' @param type Type of the selected AOI. 'f' for county, 'b' for box area, 'ps' for polygon, 's' for ESRI shapefile.
+#' @param type Type of the selected AOI. 'f' for state or county, 'b' for box area, 'ps' for polygon, 's' for ESRI shapefile.
 #' @param format Format of the image file. Can be png or kml.
 #' @param crs Coordinate system. \code{NULL} if use the default coordinate system (i.e., Albers projection); Use '+init=epsg:4326' for longitude/latitude.
 #' @param destfile A character string that specifies the directory to save the downloaded image file (e.g., 'C:/image.png'). Note that

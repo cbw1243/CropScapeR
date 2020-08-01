@@ -27,7 +27,7 @@
 #' multiple coordinates that defines a polygon, or a URL of an compressed ESRI shapefile.
 #' @param year1 Year 1. Should be a 4-digit numeric value.
 #' @param year2 Year 2. Should be a 4-digit numeric value.
-#' @param type Type of the selected AOI. 'f' for county, 'b' for box area, 'ps' for polygon, 's' for ESRI shapefile.
+#' @param type Type of the selected AOI. 'f' for state or county, 'b' for box area, 'ps' for polygon, 's' for ESRI shapefile.
 #' @param mat \code{TRUE}/\code{FALSE}. If \code{TRUE}, return a data frame. If \code{FALSE} (default), return a raster tif file.
 #' @param crs Coordinate system. \code{NULL} if use the default coordinate system (i.e., Albers projection); Use '+init=epsg:4326' for longitude/latitude.
 #' @param tol_time Number of seconds to wait for a response until giving up. Default is 20 seconds.

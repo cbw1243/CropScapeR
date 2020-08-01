@@ -12,7 +12,7 @@ multiple coordinates that defines a polygon, or a URL of an compressed ESRI shap
 
 \item{year}{Year of data. Should be a 4-digit numeric value.}
 
-\item{type}{Type of the selected AOI. 'f' for county, 'b' for box area, 'ps' for polygon, 's' for ESRI shapefile.}
+\item{type}{Type of the selected AOI. 'f' for state or county, 'b' for box area, 'ps' for polygon, 's' for ESRI shapefile.}
 
 \item{crs}{Coordinate system. \code{NULL} if use the default coordinate system (i.e., Albers projection); Use '+init=epsg:4326' for longitude/latitude.}
 

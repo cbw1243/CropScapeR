@@ -21,7 +21,7 @@ multiple coordinates that defines a polygon, or a URL of an compressed ESRI shap
 
 \item{year}{Year of data. Should be a 4-digit numeric value.}
 
-\item{type}{Type of the selected AOI. 'f' for county, 'b' for box area, 'ps' for polygon, 's' for ESRI shapefile.}
+\item{type}{Type of the selected AOI. 'f' for state or county, 'b' for box area, 'ps' for polygon, 's' for ESRI shapefile.}
 
 \item{format}{Format of the image file. Can be png or kml.}
 
