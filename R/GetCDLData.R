@@ -161,7 +161,10 @@ GetCDLData <- function(aoi = NULL, year = NULL, type = NULL, format = 'raster', 
   }
 
   if(type == 'p'){
-    if(!is.null(crs)){ aoi <- convert_crs(aoi, crs)}
+    if(!is.null(crs)){
+      aoi <- convert_crs(aoi, crs)
+      aoi <- strsplit(aoi, split = ',')[[1]]
+      }
 
     if(!is.null(save_path)) warning('Data for a single point cannot be saved as tif file. \n')
     if(!isTRUE(readr)) warning('Data are read into R. \n')
