@@ -143,7 +143,7 @@ The development version provides the most recent updates of the package.
 Please see more advanced uses of the `CropScapeR` package from [section 9.2](https://tmieno2.github.io/R-as-GIS-for-Economists/CropScapeR.html#CropScapeR) in the ['R as GIS for Economists'](https://tmieno2.github.io/R-as-GIS-for-Economists/) book. 
 
 ## Contact   
-[Bowen Chen](https://www.bwchen.com), PhD (bwchen@illinois.edu)
+[Bowen Chen](https://www.bwchen.com), PhD (bwchen0719@gmail.com)
 
 
 ## Acknowledgement      
