@@ -1,7 +1,7 @@
 Package: CropScapeR
 Type: Package
 Title: Access Cropland Data Layer Data via the 'CropScape' Web Service 
-Version: 1.1.2
+Version: 1.1.4
 Authors@R: c(person(given = "Bowen", family = "Chen", role = c("aut", "cre"), email = "bwchen0719@gmail.com", comment = c(ORCID = "0000-0003-0370-2756")),
              person(given = "Benjamin", family = "Gramig", role = "ctb"),
              person(given = "Taro", family = "Mieno", role = "ctb"))
@@ -9,7 +9,7 @@ Description: Interface to easily access Cropland Data Layer (CDL) data for any a
 Encoding: UTF-8
 License: GPL (>= 2)
 LazyData: true
-RoxygenNote: 7.0.2
+RoxygenNote: 7.1.1
 Depends: R (>= 3.6.0)
 Imports: 
         dplyr (>= 0.8.3),
@@ -20,4 +20,3 @@ Imports:
         httr (>= 1.4.1),
         RJSONIO (>= 1.3),
         utils (>= 3.6.1)
-

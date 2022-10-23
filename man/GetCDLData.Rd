@@ -90,33 +90,34 @@ Please visit the package website (\url{https://github.com/cbw1243/CropScapeR}) f
 \donttest{
 # Example. Retrieve data for the Champaign county in Illinois (FIPS: 17109) in 2018.
 data <- GetCDLData(aoi = 17019, year = 2018, type = 'f')
-raster::plot(data) # plot the data.
+data # can plot the data using raster::plot(data)
 
 # Same request but also save the raster data as a TIF file.
 # Note: A temporary file is created to save the data using the tempfile function
 data <- GetCDLData(aoi = 17019, year = 2018, type = 'f', save_path = tempfile(fileext = '.tif'))
-raster::plot(data) # plot the data.
+data # can plot the data using raster::plot(data)
 
 # Example. Retrieve data for the state of Delaware (fips: 44) in 2018.
 data <- GetCDLData(aoi = 44, year = 2018, type = 'f')
-raster::plot(data) # plot the data.
+data # can plot the data using raster::plot(data)
 
 # Example. Retrieve data for a box area defined by four corner points (long/lat)
 data <- GetCDLData(aoi = c(-88.2, 40.03, -88.1, 40.1), year = '2018', type = 'b',
 crs = '+init=epsg:4326')
-raster::plot(data)
+data # can plot the data using raster::plot(data)
 
 # Example. Retrieve data for a polygon (triangle) area defined by three coordinates in 2018.
 data <- GetCDLData(aoi = c(175207,2219600,175207,2235525,213693,2219600), year = 2018, type = 'ps')
-raster::plot(data)
+data # can plot the data using raster::plot(data)
 
 # Example. Retrieve data for a box area defined by four corner points in 2018.
 data <- GetCDLData(aoi = c(130783,2203171,153923,2217961), year = '2018', type = 'b')
-raster::plot(data)
+data # can plot the data using raster::plot(data)
 
 # Example. Retrieve data for a single point by long/lat in 2018.
 data <- GetCDLData(aoi = c(-94.6754,42.1197), year = 2018, type = 'p', crs = '+init=epsg:4326')
 data
+
 # Below uses the same point, but under the default coordinate system
 data <- GetCDLData(aoi = c(108777,2125055), year = 2018, type = 'p')
 data

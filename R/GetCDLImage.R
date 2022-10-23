@@ -37,6 +37,10 @@ GetCDLImage <- function(aoi = NULL, year = NULL, type = NULL, format = 'png',
   if(!type %in% c('f', 'ps', 'b', 's')) stop('Invalid type value. See details. \n')
 
   if(type == 'f'){
+    aoi <- as.character(aoi)
+    if ((nchar(aoi) == 1)|(nchar(aoi) == 4)){
+      aoi <- paste0('0', aoi)
+    }
     GetCDLImageF(fips = aoi, year = year, format = format, verbose = verbose, destfile = destfile, tol_time = tol_time)
   }
 

@@ -66,18 +66,38 @@ GetCDLComp <- function(aoi, year1, year2, type, mat = TRUE, crs = NULL, tol_time
   if(type == 'p') stop('Cannot request statistics for a single point. \n')
 
   if(type == 'f'){
-    data <- GetCDLCompF(fips = aoi, year1 = year1, year2 = year2, mat = mat, tol_time = tol_time, manual_try = manual_try)
+    aoi <- as.character(aoi)
+    if ((nchar(aoi) == 1)|(nchar(aoi) == 4)){
+      aoi <- paste0('0', aoi)
+    }
+    data <- tryCatch(GetCDLCompF(fips = aoi, year1 = year1, year2 = year2, mat = mat, tol_time = tol_time, manual_try = manual_try),
+                     error = function(cond){
+                       message('NA returned. Data request encounters the following error:')
+                       message(cond)
+                       return(NA)
+                     })
   }
 
   if(type == 's'){
     if(!is.null(crs)) stop('The coordinate system must be the Albers projection system. \n')
-    data <- GetCDLCompS(poly = aoi, year1 = year1, year2 = year2, mat = mat, tol_time = tol_time, manual_try = manual_try)
+    data <- tryCatch(GetCDLCompS(poly = aoi, year1 = year1, year2 = year2, mat = mat, tol_time = tol_time, manual_try = manual_try),
+                     error = function(cond){
+                       message('NA returned. Data request encounters the following error:')
+                       message(cond)
+                       return(NA)
+                     })
   }
 
   if(type == 'ps'){
     if(length(aoi) < 6) stop('The aoi must be a numerical vector with at least 6 elements. \n')
-    if(!is.null(crs)){ aoi <- convert_crs(aoi, crs)}
-    data <- GetCDLCompPs(points = aoi, year1 = year1, year2 = year2, mat = mat, tol_time = tol_time, manual_try = manual_try)
+    if(!is.null(crs)){aoi <- convert_crs(aoi, crs)}
+
+    data <- tryCatch(GetCDLCompPs(points = aoi, year1 = year1, year2 = year2, mat = mat, tol_time = tol_time, manual_try = manual_try),
+                     error = function(cond){
+                       message('NA returned. Data request encounters the following error:')
+                       message(cond)
+                       return(NA)
+                     })
   }
 
   if(type == 'b'){
@@ -88,11 +108,21 @@ GetCDLComp <- function(aoi, year1, year2, type, mat = TRUE, crs = NULL, tol_time
 
       if(aoi_crs != targetCRS){aoi <- sf::st_transform(aoi, targetCRS)}
 
-      data <- GetCDLCompB(box = sf::st_bbox(aoi), year1 = year1, year2 = year2, tol_time = tol_time, manual_try = manual_try)
+      data <- tryCatch(GetCDLCompB(box = sf::st_bbox(aoi), year1 = year1, year2 = year2, tol_time = tol_time, manual_try = manual_try),
+                       error = function(cond){
+                         message('NA returned. Data request encounters the following error:')
+                         message(cond)
+                         return(NA)
+                       })
     }else{
       if(length(aoi) != 4) stop('The aoi must be a numerical vector with 4 elements. \n')
       if(!is.null(crs)){ aoi <- convert_crs(aoi, crs)}
-      data <- GetCDLCompB(box = aoi, year1 = year1, year2 = year2, mat = mat, tol_time = tol_time, manual_try = manual_try)
+      data <- tryCatch(GetCDLCompB(box = aoi, year1 = year1, year2 = year2, mat = mat, tol_time = tol_time, manual_try = manual_try),
+                       error = function(cond){
+                         message('NA returned. Data request encounters the following error:')
+                         message(cond)
+                         return(NA)
+                       })
     }
   }
   return(data)

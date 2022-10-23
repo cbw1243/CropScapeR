@@ -47,18 +47,37 @@ GetCDLStat <- function(aoi = NULL, year = NULL, type = NULL, crs = NULL, tol_tim
   if(!type %in% c('f', 'ps', 'b', 's')) stop('Invalid type value. See details. \n')
 
   if(type == 'f'){
-    data <- GetCDLStatF(fips = aoi, year = year, tol_time = tol_time)
+    aoi <- as.character(aoi)
+    if ((nchar(aoi) == 1)|(nchar(aoi) == 4)){
+      aoi <- paste0('0', aoi)
+    }
+    data <- tryCatch(GetCDLStatF(fips = aoi, year = year, tol_time = tol_time),
+                     error = function(cond){
+                       message('NA returned. Data request encounters the following error:')
+                       message(cond)
+                       return(NA)
+                     })
   }
 
   if(type == 's'){
     if(!is.null(crs)) stop('The coordinate system must be the Albers projection system. \n')
-    data <- GetCDLStatS(poly = aoi, year = year, tol_time = tol_time)
+    data <- tryCatch(GetCDLStatS(poly = aoi, year = year, tol_time = tol_time),
+                     error = function(cond){
+                       message('NA returned. Data request encounters the following error:')
+                       message(cond)
+                       return(NA)
+                     })
   }
 
   if(type == 'ps'){
     if(length(aoi) < 6) stop('The aoi must be a numerical vector with at least 6 elements. \n')
     if(!is.null(crs)){ aoi <- convert_crs(aoi, crs)}
-    data <- GetCDLStatPs(points = aoi, year = year, tol_time = tol_time)
+    data <- tryCatch(GetCDLStatPs(points = aoi, year = year, tol_time = tol_time),
+                     error = function(cond){
+                       message('NA returned. Data request encounters the following error:')
+                       message(cond)
+                       return(NA)
+                     })
   }
 
   if(type == 'b'){
@@ -68,12 +87,21 @@ GetCDLStat <- function(aoi = NULL, year = NULL, type = NULL, crs = NULL, tol_tim
       aoi_crs <- sf::st_crs(aoi)[[2]]
 
       if(aoi_crs != targetCRS){aoi <- sf::st_transform(aoi, targetCRS)}
-
-      data <- GetCDLStatB(box = sf::st_bbox(aoi), year = year, tol_time = tol_time)
+      data <- tryCatch(GetCDLStatB(box = sf::st_bbox(aoi), year = year, tol_time = tol_time),
+                       error = function(cond){
+                         message('NA returned. Data request encounters the following error:')
+                         message(cond)
+                         return(NA)
+                       })
     }else{
       if(length(aoi) != 4) stop('The aoi must be a numerical vector with 4 elements. \n')
       if(!is.null(crs)){ aoi <- convert_crs(aoi, crs)}
-      data <- GetCDLStatB(box = aoi, year = year, tol_time = tol_time)
+      data <- tryCatch(GetCDLStatB(box = aoi, year = year, tol_time = tol_time),
+                       error = function(cond){
+                         message('NA returned. Data request encounters the following error:')
+                         message(cond)
+                         return(NA)
+                       })
     }
   }
   return(data)

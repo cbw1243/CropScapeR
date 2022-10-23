@@ -143,13 +143,13 @@ The development version provides the most recent updates of the package.
 Please see more advanced uses of the `CropScapeR` package from [section 9.2](https://tmieno2.github.io/R-as-GIS-for-Economists/CropScapeR.html#CropScapeR) in the ['R as GIS for Economists'](https://tmieno2.github.io/R-as-GIS-for-Economists/) book. 
 
 ## Contact   
-[Bowen Chen](https://www.bwchen.com), PhD (bwchen0719@gmail.com)
+Bowen Chen, PhD (bwchen0719@gmail.com)
 
 
 ## Acknowledgement      
 The development of this package was supported by USDA-NRCS Agreement No. NR193A750016C001 through the Cooperative Ecosystem Studies Units network. Any opinions, findings, conclusions, or recommendations expressed are those of the author(s) and do not necessarily reflect the view of the U.S. Department of Agriculture. 
 
-Dr. [Benjamin Gramig](https://www.bengramig.com/) and Dr. [Taro Mieno](http://taromieno.netlify.com/) are contributors of this package. 
+Dr. [Benjamin Gramig](https://www.bengramig.com/) and Dr. [Taro Mieno](http://taromieno.netlify.app/) are contributors of this package. 
 
 
 ## Reference   

@@ -68,33 +68,34 @@
 #' \donttest{
 #' # Example. Retrieve data for the Champaign county in Illinois (FIPS: 17109) in 2018.
 #' data <- GetCDLData(aoi = 17019, year = 2018, type = 'f')
-#' raster::plot(data) # plot the data.
+#' data # can plot the data using raster::plot(data)
 #'
 #' # Same request but also save the raster data as a TIF file.
 #' # Note: A temporary file is created to save the data using the tempfile function
 #' data <- GetCDLData(aoi = 17019, year = 2018, type = 'f', save_path = tempfile(fileext = '.tif'))
-#' raster::plot(data) # plot the data.
+#' data # can plot the data using raster::plot(data)
 #'
 #' # Example. Retrieve data for the state of Delaware (fips: 44) in 2018.
 #' data <- GetCDLData(aoi = 44, year = 2018, type = 'f')
-#' raster::plot(data) # plot the data.
+#' data # can plot the data using raster::plot(data)
 #'
 #' # Example. Retrieve data for a box area defined by four corner points (long/lat)
 #' data <- GetCDLData(aoi = c(-88.2, 40.03, -88.1, 40.1), year = '2018', type = 'b',
 #' crs = '+init=epsg:4326')
-#' raster::plot(data)
+#' data # can plot the data using raster::plot(data)
 #'
 #' # Example. Retrieve data for a polygon (triangle) area defined by three coordinates in 2018.
 #' data <- GetCDLData(aoi = c(175207,2219600,175207,2235525,213693,2219600), year = 2018, type = 'ps')
-#' raster::plot(data)
+#' data # can plot the data using raster::plot(data)
 #'
 #' # Example. Retrieve data for a box area defined by four corner points in 2018.
 #' data <- GetCDLData(aoi = c(130783,2203171,153923,2217961), year = '2018', type = 'b')
-#' raster::plot(data)
+#' data # can plot the data using raster::plot(data)
 #'
 #' # Example. Retrieve data for a single point by long/lat in 2018.
 #' data <- GetCDLData(aoi = c(-94.6754,42.1197), year = 2018, type = 'p', crs = '+init=epsg:4326')
 #' data
+#'
 #' # Below uses the same point, but under the default coordinate system
 #' data <- GetCDLData(aoi = c(108777,2125055), year = 2018, type = 'p')
 #' data
@@ -126,12 +127,27 @@ GetCDLData <- function(aoi = NULL, year = NULL, type = NULL, format = 'raster', 
   if(!isTRUE(readr) & format == 'sf') stop('Cannot return a sf object if not read the data into R. Use readr = TRUE. \n')
 
   if(type == 'f'){
-    data <- GetCDLDataF(fips = aoi, year = year, tol_time = tol_time, save_path = save_path, readr = readr)
+    aoi <- as.character(aoi)
+    if ((nchar(aoi) == 1)|(nchar(aoi) == 4)){
+      aoi <- paste0('0', aoi)
+    }
+
+  data <- tryCatch(GetCDLDataF(fips = aoi, year = year, tol_time = tol_time, save_path = save_path, readr = readr),
+                   error = function(cond){
+                       message('NA returned. Data request encounters the following error:')
+                       message(cond)
+                       return(NA)
+                   })
   }
 
   if(type == 's'){
     if(!is.null(crs)) stop('The coordinate system must be the Albers projection system. \n')
-    data <- GetCDLDataS(poly = aoi, year = year, tol_time = tol_time, save_path = save_path, readr = readr)
+    data <- tryCatch(GetCDLDataS(poly = aoi, year = year, tol_time = tol_time, save_path = save_path, readr = readr),
+                     error = function(cond){
+                       message('NA returned. Data request encounters the following error:')
+                       message(cond)
+                       return(NA)
+                     })
   }
 
   if(type == 'ps'){
@@ -139,7 +155,12 @@ GetCDLData <- function(aoi = NULL, year = NULL, type = NULL, format = 'raster', 
 
     if(!is.null(crs)){ aoi <- convert_crs(aoi, crs)}
 
-    data <- GetCDLDataPs(points = aoi, year = year, tol_time = tol_time, save_path = save_path, readr = readr)
+    data <- tryCatch(GetCDLDataPs(points = aoi, year = year, tol_time = tol_time, save_path = save_path, readr = readr),
+                     error = function(cond){
+                       message('NA returned. Data request encounters the following error:')
+                       message(cond)
+                       return(NA)
+                     })
   }
 
   if(type == 'b'){
@@ -150,13 +171,25 @@ GetCDLData <- function(aoi = NULL, year = NULL, type = NULL, format = 'raster', 
 
       if(aoi_crs != targetCRS){aoi <- sf::st_transform(aoi, targetCRS)}
 
-      data <- GetCDLDataB(box = sf::st_bbox(aoi), year = year, tol_time = tol_time, save_path = save_path, readr = readr)
+      data <- tryCatch(GetCDLDataB(box = sf::st_bbox(aoi), year = year, tol_time = tol_time, save_path = save_path, readr = readr),
+                       error = function(cond){
+                         message('NA returned. Data request encounters the following error:')
+                         message(cond)
+                         return(NA)
+                       })
+
     }else{
       if(length(aoi) != 4) stop('The aoi must be a numerical vector with 4 elements. \n')
       if(!is.null(crs)){
         aoi <- convert_crs(aoi, crs)
-        }
-      data <- GetCDLDataB(box = aoi, year = year, tol_time = tol_time, save_path = save_path, readr = readr)
+      }
+
+      data <- tryCatch(GetCDLDataB(box = aoi, year = year, tol_time = tol_time, save_path = save_path, readr = readr),
+                       error = function(cond){
+                         message('NA returned. Data request encounters the following error:')
+                         message(cond)
+                         return(NA)
+                       })
     }
   }
 
@@ -169,7 +202,13 @@ GetCDLData <- function(aoi = NULL, year = NULL, type = NULL, format = 'raster', 
     if(!is.null(save_path)) warning('Data for a single point cannot be saved as tif file. \n')
     if(!isTRUE(readr)) warning('Data are read into R. \n')
 
-    data <- GetCDLDataP(point = aoi, year = year, tol_time = tol_time)
+    data <- tryCatch(GetCDLDataP(point = aoi, year = year, tol_time = tol_time),
+                     error = function(cond){
+                       message('NA returned. Data request encounters the following error:')
+                       message(cond)
+                       return(NA)
+                     })
+
   }
 
   if(isTRUE(readr) & format == 'table' & type %in% c('f', 'ps', 'b', 's')){

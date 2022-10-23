@@ -1,10 +1,15 @@
-convert_crs <- function(aoi, crs){
+convert_crs <- function(aoi, crs, flat = TRUE){
   targetCRS <- "+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
   numps <- length(aoi)
   aoi_dat <- data.frame(x = aoi[seq(1, numps, by = 2)], y = aoi[seq(2, numps, by = 2)])
   aoi_sf <- sf::st_as_sf(aoi_dat, coords = c('x', 'y'), crs = crs)
   aoi_sf_trans <- sf::st_transform(aoi_sf, targetCRS)
-  out <- paste0(as.vector(t(sf::st_coordinates(aoi_sf_trans))), collapse = ',')
+  if (flat) {
+    out <- paste0(as.vector(t(sf::st_coordinates(aoi_sf_trans))), collapse = ',')
+  }else{
+    out <- as.vector(t(sf::st_coordinates(aoi_sf_trans)))
+  }
+
   return(out)
 }
 
@@ -312,6 +317,7 @@ GetCDLCompPs <- function(points, year1, year2, mat, tol_time, manual_try){
     }
   }else{
     if(isTRUE(dataXtry) & isTRUE(manual_try)){
+      points <- as.numeric(strsplit(points, ',')[[1]])
       datat1 <- GetCDLData(aoi = points, year = year1, type = 'ps', tol_time = tol_time)
       datat2 <- GetCDLData(aoi = points, year = year2, type = 'ps', tol_time = tol_time)
       outdata <- manualrotate(datat1, datat2)
